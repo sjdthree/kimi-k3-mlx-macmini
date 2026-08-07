@@ -120,4 +120,11 @@ getting them wrong produces silently wrong output rather than errors:
 
 `third_party/kda_naive.py` is `fla/ops/kda/naive.py` from
 [flash-linear-attention](https://github.com/fla-org/flash-linear-attention) (MIT),
-vendored unmodified as the KDA reference. AirLLM: https://github.com/lyogavin/airllm (MIT).
+vendored unmodified as the KDA reference.
+
+AirLLM (MIT): https://github.com/lyogavin/airllm — the per-expert streaming approach this
+work builds on. Gavin Li's write-up of running K3 on a single 4 GB GPU under CUDA is the
+original motivation for the port:
+["Unbelievable! Run Kimi K3 — 2.8 Trillion Parameters — on a Single 4GB GPU"](https://medium.com/@lyo.gavin).
+
+Kimi-K3 weights and modeling code: [moonshotai/Kimi-K3](https://huggingface.co/moonshotai/Kimi-K3).
