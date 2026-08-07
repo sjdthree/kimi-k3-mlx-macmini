@@ -20,6 +20,16 @@ KDA linear-attention layers call Triton kernels, neither of which has a Metal ba
 This is a from-scratch MLX implementation of the architecture, validated against a
 torch/CPU reference built from the shipped code.
 
+## Docs
+
+| | |
+|---|---|
+| **[QUICKSTART.md](QUICKSTART.md)** | checkout → generated token in ~5 min |
+| **[INSTALL.md](INSTALL.md)** | hardware, storage, dependencies, troubleshooting |
+| **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)** | results against every spec criterion |
+| [PROGRESS.md](PROGRESS.md) | milestone-by-milestone engineering record |
+| [K3_MLX_PLAN.md](K3_MLX_PLAN.md) | the implementation plan, and where the spec was wrong |
+
 ## Status
 
 All 11 milestones complete. See **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)**.
@@ -48,22 +58,24 @@ implementation.
 
 ## Setup
 
-Needs an Apple Silicon Mac, Python 3.11/3.12, `mlx`, `torch`, `numpy`, `tiktoken`,
-`compressed-tensors` (oracle only), and the checkpoint on fast local storage.
+Apple Silicon Mac, arm64 Python 3.11/3.12, and 1.42 TiB of **fast local** storage.
+The model itself needs only `mlx`, `numpy`, and `tiktoken` — torch is required solely
+by the correctness oracle.
 
 ```bash
-# 1. index the checkpoint (~8 s, 497,220 tensors)
+pip install mlx numpy tiktoken
+
+# index the checkpoint (~8 s, 497,220 tensors)
 python tools/k3_manifest.py build --ckpt /path/to/Kimi-K3 --out manifest.jsonl.gz
 python tools/k3_manifest.py verify --ckpt /path/to/Kimi-K3
 
-# 2. optional but worth ~1.3x: stage dense weights (105.7 GiB) to your fastest disk
-python tools/k3_cache.py --src /path/to/Kimi-K3 --dest ~/k3_dense \
-    --layers 0-92 --expert-layers ""
-
-# 3. run
-python -m air_llm.run --model /path/to/Kimi-K3 --cache ~/k3_dense \
-    --mode runtime --resident-gb 32 --prompt "..." --max-new-tokens 16
+# run
+python -m air_llm.run --model /path/to/Kimi-K3 \
+    --mode runtime --prompt "..." --max-new-tokens 16
 ```
+
+Full walkthrough in **[QUICKSTART.md](QUICKSTART.md)**; hardware, storage layout and
+troubleshooting in **[INSTALL.md](INSTALL.md)**.
 
 `--mode validation` uses fp32 weights and the unfused expert path for exact parity work;
 `runtime` uses bf16 (the on-disk dtype, lossless) and the fused kernel. Both produce
