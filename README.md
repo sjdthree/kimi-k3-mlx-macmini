@@ -54,7 +54,8 @@ implementation.
 | `air_llm/run.py` | CLI |
 | `air_llm/server/` | OpenAI-compatible `/v1` API (FastAPI) + `/native/v1` |
 | `k3ref/` | torch/CPU fp32 oracle — the parity reference |
-| `tools/` | manifest builder, weight staging, reliability harness, profilers |
+| `tools/` | manifest builder, weight staging, reliability harness, profilers, long-job runner |
+| `prompts/` | architecture-targeted prompts (KDA, AttnRes, NoPE, LatentMoE) |
 | `tests/` | 13 suites |
 | `p0/` | feasibility-spike scripts (see [P0_RESULTS.md](P0_RESULTS.md)) |
 
