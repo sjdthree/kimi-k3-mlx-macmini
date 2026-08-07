@@ -25,6 +25,7 @@ torch/CPU reference built from the shipped code.
 | | |
 |---|---|
 | **[QUICKSTART.md](QUICKSTART.md)** | checkout → generated token in ~5 min |
+| **[docs/API.md](docs/API.md)** | OpenAI-compatible `/v1` server: compatibility matrix, examples, ops |
 | **[INSTALL.md](INSTALL.md)** | hardware, storage, dependencies, troubleshooting |
 | **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)** | results against every spec criterion |
 | [PROGRESS.md](PROGRESS.md) | milestone-by-milestone engineering record |
@@ -51,6 +52,7 @@ implementation.
 | `air_llm/models/kimi_k3/` | the MLX model — MLA, KDA, latent MoE, MXFP4, state, tokenizer |
 | `air_llm/kernels/metal/` | fused MXFP4 matvec (9.5× faster, 1500× more accurate than unfused) |
 | `air_llm/run.py` | CLI |
+| `air_llm/server/` | OpenAI-compatible `/v1` API (FastAPI) + `/native/v1` |
 | `k3ref/` | torch/CPU fp32 oracle — the parity reference |
 | `tools/` | manifest builder, weight staging, reliability harness, profilers |
 | `tests/` | 13 suites |
@@ -80,6 +82,26 @@ troubleshooting in **[INSTALL.md](INSTALL.md)**.
 `--mode validation` uses fp32 weights and the unfused expert path for exact parity work;
 `runtime` uses bf16 (the on-disk dtype, lossless) and the fused kernel. Both produce
 identical greedy tokens.
+
+## OpenAI-compatible API
+
+```bash
+export AIR_LLM_API_KEYS=sk-your-key
+python -m air_llm.serve --model /path/to/Kimi-K3 --cache ~/k3_dense \
+    --mode runtime --resident-gb 32 --port 8000
+```
+
+Any OpenAI SDK works with only `base_url` + `api_key` — verified by running the official
+SDK against it (29 conformance checks). Chat completions, SSE streaming, logprobs,
+sampling, cancellation, auth, quotas, Prometheus metrics.
+
+**Tools, JSON-schema output, vision and embeddings are deliberately reported as
+unsupported** rather than approximated: there is no constrained decoding in this backend
+and no embedding model deployed, so those requests return a structured
+`unsupported_capability` error. See [docs/API.md](docs/API.md) for the full matrix.
+
+Note the backend is disk-bound at ~34 s/token, so clients need timeouts ≥ 900 s and
+should prefer `stream=true`.
 
 ## Performance notes
 
