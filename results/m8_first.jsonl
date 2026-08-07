@@ -1,0 +1,1 @@
+{"token_index": 0, "token_id": 17374, "elapsed_seconds": 65.398, "bytes_read": 210952092672, "expert_bytes": 99791290368, "peak_unified_memory": 6447592668, "layers_completed": 93, "experts_loaded": 17061, "cache_bytes": 479379456, "logit_checksum": "15df31cbcb96bcf4", "nonfinite": 0, "nonfinite_where": ""}

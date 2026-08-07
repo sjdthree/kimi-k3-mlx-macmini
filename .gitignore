@@ -1,0 +1,24 @@
+# Derived artifacts -- regenerate, don't track.
+# The manifest is 7.1 MB, rebuilds in ~8 s, and embeds an absolute checkpoint path,
+# so it is machine-specific:
+#   python tools/k3_manifest.py build --ckpt /path/to/Kimi-K3 --out manifest.jsonl.gz
+manifest*.jsonl.gz
+
+# Local weight caches (105+ GiB). Staged with tools/k3_cache.py.
+k3_dense/
+k3_cache/
+*.bin
+
+# Synthetic test model (2.7 MB, rebuilt by tools/make_synthetic_k3.py; the
+# integration test regenerates it automatically if absent)
+mini-k3/
+
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+env/
+
+# Scratch
+*.tmp
+.bench*
