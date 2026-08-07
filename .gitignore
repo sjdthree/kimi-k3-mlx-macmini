@@ -22,3 +22,7 @@ env/
 # Scratch
 *.tmp
 .bench*
+
+# Long-job run artifacts. In flux while a job is generating; commit a finished
+# run deliberately with `git add -f runs/<name>/output.txt` if it is worth keeping.
+runs/

@@ -24,6 +24,7 @@ torch/CPU reference built from the shipped code.
 
 | | |
 |---|---|
+| **[SESSION.md](SESSION.md)** | current state, what's running, how to resume |
 | **[QUICKSTART.md](QUICKSTART.md)** | checkout → generated token in ~5 min |
 | **[docs/API.md](docs/API.md)** | OpenAI-compatible `/v1` server: compatibility matrix, examples, ops |
 | **[INSTALL.md](INSTALL.md)** | hardware, storage, dependencies, troubleshooting |
