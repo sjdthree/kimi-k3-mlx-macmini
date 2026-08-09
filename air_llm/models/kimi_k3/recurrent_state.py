@@ -99,10 +99,21 @@ class KimiK3State:
             arrays[f"kda_conv.{L}.q"] = conv_to_canonical(q)
             arrays[f"kda_conv.{L}.k"] = conv_to_canonical(k)
             arrays[f"kda_conv.{L}.v"] = conv_to_canonical(v)
+        meta["mla_quant"] = {}
         for L, cache in self.mla_caches.items():
+            n = cache.length
             # trim to the valid prefix -- the buffer tail is uninitialised slack
-            arrays[f"mla.{L}.latent"] = np.array(cache.latent[:, :cache.length], copy=False)
-            arrays[f"mla.{L}.rot"] = np.array(cache.rot[:, :cache.length], copy=False)
+            arrays[f"mla.{L}.rot"] = np.array(cache.rot[:, :n], copy=False)
+            if cache.quantised:
+                # keep the codes; dequantising to fp32 on the way out would inflate the
+                # file ~7x and re-quantising on load would round a second time
+                q = cache.latent
+                meta["mla_quant"][str(L)] = {"bits": q.bits, "group_size": q.gs, "r": q.r}
+                arrays[f"mla.{L}.codes"] = np.array(q.codes[:, :n], copy=False)
+                arrays[f"mla.{L}.scales"] = np.array(q.scales[:, :n], copy=False)
+                arrays[f"mla.{L}.biases"] = np.array(q.biases[:, :n], copy=False)
+            else:
+                arrays[f"mla.{L}.latent"] = np.array(cache.latent[:, :n], copy=False)
         if self.block_residual is not None:
             arrays["block_residual"] = np.array(self.block_residual, copy=False)
 
@@ -135,8 +146,18 @@ class KimiK3State:
                 conv_from_canonical(z[f"kda_conv.{L}.{w}"]) for w in ("q", "k", "v"))
         for L in meta["mla_layers"]:
             from .attention_mla import MLACache
-            lat = mx.array(z[f"mla.{L}.latent"])
-            st.mla_caches[L] = MLACache(lat, mx.array(z[f"mla.{L}.rot"]), lat.shape[1])
+            rot = mx.array(z[f"mla.{L}.rot"])
+            qmeta = meta.get("mla_quant", {}).get(str(L))
+            if qmeta is None:
+                lat = mx.array(z[f"mla.{L}.latent"])
+            else:
+                from .mla_quant import QuantLatent
+                lat = QuantLatent(rot.shape[0], rot.shape[1], qmeta["r"],
+                                  qmeta["bits"], qmeta["group_size"])
+                lat.codes = mx.array(z[f"mla.{L}.codes"])
+                lat.scales = mx.array(z[f"mla.{L}.scales"])
+                lat.biases = mx.array(z[f"mla.{L}.biases"])
+            st.mla_caches[L] = MLACache(lat, rot, rot.shape[1])
         if meta["has_block_residual"]:
             st.block_residual = mx.array(z["block_residual"])
         return st

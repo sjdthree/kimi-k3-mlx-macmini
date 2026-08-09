@@ -62,19 +62,29 @@ def _round_up(n: int, step: int) -> int:
 @dataclass
 class MLACache:
     """Latent KV cache. `latent`/`rot` are backing buffers with spare capacity; only the
-    first `length` positions along axis 1 are valid."""
-    latent: mx.array          # [B, capacity, kv_lora_rank]   post kv_a_layernorm
+    first `length` positions along axis 1 are valid.
+
+    `latent` is normally a plain mx.array. When `mla_cache_bits` is configured it is a
+    mla_quant.QuantLatent instead, which exposes the same write/grow/read surface -- see
+    that module for why quantisation is off by default.
+    """
+    latent: object            # mx.array [B, cap, kv_lora_rank] | QuantLatent
     rot: mx.array             # [B, capacity, qk_rope_head_dim]
     length: int = 0
 
     @property
+    def quantised(self) -> bool:
+        return not isinstance(self.latent, mx.array)
+
+    @property
     def capacity(self) -> int:
-        return self.latent.shape[1]
+        return self.latent.capacity if self.quantised else self.latent.shape[1]
 
     def view(self) -> tuple[mx.array, mx.array]:
         """The valid prefix, as fp32 for the attention math."""
-        return (self.latent[:, :self.length].astype(mx.float32),
-                self.rot[:, :self.length].astype(mx.float32))
+        lat = (self.latent.read(self.length) if self.quantised
+               else self.latent[:, :self.length].astype(mx.float32))
+        return lat, self.rot[:, :self.length].astype(mx.float32)
 
     def append(self, c_new: mx.array, r_new: mx.array) -> "MLACache":
         """Write T new positions, growing the buffer only when a chunk fills."""
@@ -84,18 +94,27 @@ class MLACache:
             # Double (with a floor) so total copy stays amortised O(1) per token rather
             # than O(T) per growth * O(T/step) growths.
             cap = _round_up(max(need, 2 * self.capacity, CACHE_STEP), CACHE_STEP)
-            self.latent = _grown(self.latent, cap, self.length)
+            if self.quantised:
+                self.latent.grow(cap, self.length)
+            else:
+                self.latent = _grown(self.latent, cap, self.length)
             self.rot = _grown(self.rot, cap, self.length)
-        self.latent[:, self.length:need] = c_new.astype(self.latent.dtype)
+        if self.quantised:
+            self.latent.write(self.length, c_new)
+        else:
+            self.latent[:, self.length:need] = c_new.astype(self.latent.dtype)
         self.rot[:, self.length:need] = r_new.astype(self.rot.dtype)
         self.length = need
         return self
 
+    def bytes_per_token(self) -> float:
+        lat = (self.latent.bytes_per_token() if self.quantised
+               else self.latent.shape[2] * self.latent.itemsize)
+        return lat + self.rot.shape[2] * self.rot.itemsize
+
     def nbytes_used(self) -> int:
         """Bytes for the VALID prefix -- what the cache would cost if trimmed."""
-        per = self.latent.shape[2] * self.latent.itemsize + \
-            self.rot.shape[2] * self.rot.itemsize
-        return self.latent.shape[0] * self.length * per
+        return int(self.rot.shape[0] * self.length * self.bytes_per_token())
 
 
 def _grown(buf: mx.array, cap: int, keep: int) -> mx.array:
@@ -105,10 +124,14 @@ def _grown(buf: mx.array, cap: int, keep: int) -> mx.array:
     return out
 
 
-def _new_cache(B: int, klr: int, rope: int, T: int, dtype) -> MLACache:
+def _new_cache(B: int, klr: int, rope: int, T: int, dtype, bits, group_size) -> MLACache:
     cap = _round_up(max(T, CACHE_STEP), CACHE_STEP)
-    return MLACache(mx.zeros((B, cap, klr), dtype=dtype),
-                    mx.zeros((B, cap, rope), dtype=dtype), 0)
+    if bits:
+        from .mla_quant import QuantLatent, pick_group_size
+        lat = QuantLatent(B, cap, klr, bits, group_size or pick_group_size(klr))
+    else:
+        lat = mx.zeros((B, cap, klr), dtype=dtype)
+    return MLACache(lat, mx.zeros((B, cap, rope), dtype=dtype), 0)
 
 
 class MLAAttention:
@@ -136,8 +159,11 @@ class MLAAttention:
         self.wv = mx.expand_dims(kb[:, nope:, :], 0)          # [1,H,vhd,r]
 
         # fp32 by default: latent caching is exactly lossless, and nothing here needs to
-        # spend that. `mla_cache_dtype` on the config opts into bf16 (a further 2x).
+        # spend that. `mla_cache_dtype` on the config opts into bf16 (a further 2x), and
+        # `mla_cache_bits` into quantised storage (see mla_quant.py -- off by default).
         self.cache_dtype = getattr(cfg, "mla_cache_dtype", mx.float32)
+        self.cache_bits = getattr(cfg, "mla_cache_bits", None)
+        self.cache_group = getattr(cfg, "mla_cache_group_size", None)
 
     def __call__(self, x: mx.array, cache: MLACache | None = None):
         c = self.cfg
@@ -158,7 +184,8 @@ class MLAAttention:
         r_new = ckv[..., klr:]                                       # [B,T,rope]
 
         if cache is None:
-            cache = _new_cache(B, klr, rope, T, self.cache_dtype)
+            cache = _new_cache(B, klr, rope, T, self.cache_dtype,
+                               self.cache_bits, self.cache_group)
         cache.append(c_new, r_new)
         lat, rot = cache.view()                                      # [B,Tk,klr], [B,Tk,rope]
         Tk = cache.length
