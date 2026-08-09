@@ -114,16 +114,14 @@ def main():
             st = LayerState(kda_state=mlx_state.kda_states.get(L),
                             kda_conv=mlx_state.kda_conv.get(L))
             if not cfg.is_kda(L):
-                from air_llm.models.kimi_k3.attention_mla import MLACache
-                c = mlx_state.mla_caches.get(L)
-                st.mla_cache = MLACache(*c) if c else None
+                st.mla_cache = mlx_state.mla_caches.get(L)
             from air_llm.models.kimi_k3.layer import LayerDiag
             diag = LayerDiag()
             x_mlx, br_mlx, st = ml(x_mlx, br_mlx, state=st, diag=diag)
             if cfg.is_kda(L):
                 mlx_state.kda_states[L], mlx_state.kda_conv[L] = st.kda_state, st.kda_conv
             else:
-                mlx_state.mla_caches[L] = (st.mla_cache.key, st.mla_cache.value)
+                mlx_state.mla_caches[L] = st.mla_cache
             mx.eval(x_mlx, br_mlx)
             del ml
 

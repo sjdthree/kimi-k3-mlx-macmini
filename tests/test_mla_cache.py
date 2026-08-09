@@ -298,15 +298,19 @@ def _cache_arrays(cache):
     return out
 
 
-def gate_M1(cfg, wmx, x_mx):
-    """Bytes actually resident per token, measured -- not the shape we hoped for."""
-    print("\nM1 -- cache bytes/token")
-    T = x_mx.shape[1]
-    _, c1 = run_new(cfg, wmx, x_mx[:, :1])
-    _, cT = run_new(cfg, wmx, x_mx[:, :T])
-    b1 = sum(a.nbytes for a in _cache_arrays(c1))
-    bT = sum(a.nbytes for a in _cache_arrays(cT))
-    per_tok = (bT - b1) / max(T - 1, 1)
+def gate_M1(cfg, wmx, long_x):
+    """Marginal resident bytes per token, measured.
+
+    Taken as b(2L) - b(L) over L rather than b(T)/T, because a chunked buffer carries
+    slack: dividing total by length would charge the new cache for headroom it has not
+    used yet, and would let a per-token allocator hide behind a small T. The marginal is
+    the number that decides whether a 32k context fits.
+    """
+    print("\nM1 -- cache bytes/token (marginal)")
+    L = long_x.shape[1] // 2
+    bL = sum(a.nbytes for a in _cache_arrays(run_new(cfg, wmx, long_x[:, :L])[1]))
+    b2L = sum(a.nbytes for a in _cache_arrays(run_new(cfg, wmx, long_x[:, :2 * L])[1]))
+    per_tok = (b2L - bL) / L
 
     nh, qhd, vhd = cfg.num_attention_heads, cfg.q_head_dim, cfg.v_head_dim
     expanded = (nh * qhd + nh * vhd) * 4
@@ -338,6 +342,59 @@ def gate_M2(cfg, wmx, x_mx, steps: int = 256):
     check("backing store grows in chunks, not per token", grows <= steps // 8 + 2,
           f"{grows} reallocations over {steps} appends "
           f"(per-token concat gives {steps - 1})")
+
+
+def gate_S1(cfg, wmx, x_mx, tmpdir: Path):
+    """Save/restore must be a no-op on the continuation.
+
+    tests/test_state_roundtrip.py exercises the KDA half of KimiK3State but never
+    populates mla_caches, so this path has had no coverage. It is exactly the kind of
+    place the conv-layout trap already bit once: a cache that round-trips to a plausible
+    but wrong buffer diverges silently a few tokens later.
+    """
+    from air_llm.models.kimi_k3.recurrent_state import KimiK3State
+    print("\nS1 -- MLA cache survives save/load")
+    T, split = x_mx.shape[1], 24
+
+    _, straight = run_new(cfg, wmx, x_mx[:, :split])
+    for t in range(split, T):
+        o_ref, straight = run_new(cfg, wmx, x_mx[:, t:t + 1], cache=straight)
+
+    _, cache = run_new(cfg, wmx, x_mx[:, :split])
+    st = KimiK3State(token_position=split)
+    st.mla_caches[0] = cache
+    p = tmpdir / "mla_state.npz"
+    st.save(p)
+    back = KimiK3State.load(p)
+    check("restored length matches", back.mla_caches[0].length == split,
+          f"{back.mla_caches[0].length} vs {split}")
+
+    resumed = back.mla_caches[0]
+    for t in range(split, T):
+        o_got, resumed = run_new(cfg, wmx, x_mx[:, t:t + 1], cache=resumed)
+    cmp(o_got, o_ref, f"continuation after reload ({T - split} tokens)", atol=0.0)
+
+    # the buffer must still grow after a reload -- a restored cache is trimmed exactly
+    # to `length`, so the very next append hits the growth path
+    check("restored cache still appends", resumed.length == T, f"{resumed.length} vs {T}")
+
+
+def gate_D1(cfg, w, wmx, x_np, x_mx):
+    """bf16 latent storage: a further 2x, but no longer exact. Measured, not asserted."""
+    print("\nD1 -- storage dtype trade (report only; fp32 is the default)")
+    ref = oracle_mla(cfg, w, x_np)
+    import copy
+    for name, dt in (("fp32 (default)", mx.float32), ("bf16", mx.bfloat16)):
+        c2 = copy.copy(cfg)
+        c2.mla_cache_dtype = dt
+        got, cache = run_new(c2, wmx, x_mx)
+        a = np.asarray(got, dtype=np.float64).ravel()
+        b = np.asarray(ref, dtype=np.float64).ravel()
+        cos = float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
+        per_tok = cache.latent.shape[2] * cache.latent.itemsize + \
+            cache.rot.shape[2] * cache.rot.itemsize
+        print(f"       {name:<16} {per_tok:>5} B/tok/layer   "
+              f"max|d| {np.abs(a-b).max():.3e}   cos {cos:.10f}")
 
 
 def gate_M3():
@@ -375,8 +432,13 @@ def main():
     gate_N2(cfg, w, wmx, x_np, x_mx, prefill=16)
     gate_N3(cfg, wmx, x_mx, prefill=16)
     gate_N4(cfg, wmx, x_mx)
-    gate_M1(cfg, wmx, x_mx)
+    long_x = mx.array((rng.standard_normal((1, 512, cfg.hidden_size)) * 0.5).astype(np.float32))
+    gate_M1(cfg, wmx, long_x)
     gate_M2(cfg, wmx, x_mx)
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        gate_S1(cfg, wmx, x_mx, Path(d))
+    gate_D1(cfg, w, wmx, x_np, x_mx)
 
     print(f"\n{'ALL GATES PASS' if FAILS == 0 else f'{FAILS} GATE(S) FAILED'}")
     return FAILS

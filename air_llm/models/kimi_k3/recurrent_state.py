@@ -26,7 +26,10 @@ from pathlib import Path
 import mlx.core as mx
 import numpy as np
 
-FORMAT_VERSION = 1
+# v2: MLA caches hold the 512-wide latent + 64-wide MQA rope slice instead of the
+# expanded per-head key/value. A v1 file cannot be reinterpreted as v2 -- the expansion
+# through kv_b is not invertible -- so `load` refuses it rather than guessing.
+FORMAT_VERSION = 2
 CANONICAL_CONV_LAYOUT = "channels_first"      # [B, C, k-1]
 
 
@@ -50,7 +53,7 @@ class KimiK3State:
     token_position: int = 0
     kda_states: dict[int, mx.array] = field(default_factory=dict)      # [B,H,K,V]
     kda_conv: dict[int, tuple] = field(default_factory=dict)           # 3x [B,k-1,C]
-    mla_caches: dict[int, tuple] = field(default_factory=dict)         # (key, value)
+    mla_caches: dict[int, object] = field(default_factory=dict)        # MLACache
 
     # NOT part of the carried state, despite spec section 12 listing
     # `attention_residuals`. block_residual is allocated fresh inside every forward pass
@@ -70,7 +73,9 @@ class KimiK3State:
 
         kda = sum(nb(v) for v in self.kda_states.values())
         conv = sum(nb(c) for t in self.kda_conv.values() for c in t)
-        mla = sum(nb(k) + nb(v) for k, v in self.mla_caches.values())
+        # nbytes_used, not the buffer size: the cache carries chunked slack, and reporting
+        # capacity would make the number jump by a chunk every CACHE_STEP tokens.
+        mla = sum(c.nbytes_used() for c in self.mla_caches.values())
         br = nb(self.block_residual)
         return {"kda_recurrent": kda, "kda_conv": conv, "mla_cache": mla,
                 "block_residual": br, "total": kda + conv + mla + br}
@@ -94,9 +99,10 @@ class KimiK3State:
             arrays[f"kda_conv.{L}.q"] = conv_to_canonical(q)
             arrays[f"kda_conv.{L}.k"] = conv_to_canonical(k)
             arrays[f"kda_conv.{L}.v"] = conv_to_canonical(v)
-        for L, (k, v) in self.mla_caches.items():
-            arrays[f"mla.{L}.key"] = np.array(k, copy=False)
-            arrays[f"mla.{L}.value"] = np.array(v, copy=False)
+        for L, cache in self.mla_caches.items():
+            # trim to the valid prefix -- the buffer tail is uninitialised slack
+            arrays[f"mla.{L}.latent"] = np.array(cache.latent[:, :cache.length], copy=False)
+            arrays[f"mla.{L}.rot"] = np.array(cache.rot[:, :cache.length], copy=False)
         if self.block_residual is not None:
             arrays["block_residual"] = np.array(self.block_residual, copy=False)
 
@@ -108,7 +114,14 @@ class KimiK3State:
         z = np.load(Path(path), allow_pickle=False)
         meta = json.loads(bytes(z["__meta__"]).decode())
         if meta["format_version"] != FORMAT_VERSION:
-            raise ValueError(f"unsupported state format {meta['format_version']}")
+            extra = ""
+            if meta["format_version"] == 1:
+                extra = (" v1 stored the MLA cache expanded through kv_b, which is not "
+                         "invertible back to the latent, so it cannot be upgraded -- "
+                         "re-run the prefill instead.")
+            raise ValueError(
+                f"unsupported state format {meta['format_version']}, expected "
+                f"{FORMAT_VERSION}.{extra}")
         if meta["conv_layout"] != CANONICAL_CONV_LAYOUT:
             raise ValueError(
                 f"conv state layout is {meta['conv_layout']!r}, expected "
@@ -121,7 +134,9 @@ class KimiK3State:
             st.kda_conv[L] = tuple(
                 conv_from_canonical(z[f"kda_conv.{L}.{w}"]) for w in ("q", "k", "v"))
         for L in meta["mla_layers"]:
-            st.mla_caches[L] = (mx.array(z[f"mla.{L}.key"]), mx.array(z[f"mla.{L}.value"]))
+            from .attention_mla import MLACache
+            lat = mx.array(z[f"mla.{L}.latent"])
+            st.mla_caches[L] = MLACache(lat, mx.array(z[f"mla.{L}.rot"]), lat.shape[1])
         if meta["has_block_residual"]:
             st.block_residual = mx.array(z["block_residual"])
         return st
