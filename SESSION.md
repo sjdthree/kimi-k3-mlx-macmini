@@ -1,7 +1,11 @@
-# Session state — 2026-08-07
+# Session state — 2026-08-07, updated 2026-08-09
 
 Picking this up after a break? Read this first, then `PROGRESS.md` for the engineering
 record and `VALIDATION_REPORT.md` for results.
+
+**Resuming on 2026-08-09 or later? Two things are in flight at once:** the long run below
+(on `master`), and an unmerged branch waiting on it. Jump to
+[Branch in flight](#branch-in-flight-mla-latent-cache).
 
 ## What exists
 
@@ -59,6 +63,55 @@ nohup python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
 
 If the run finished, keep the result deliberately: `git add -f runs/polymath/output.txt`.
 
+### Where it had got to on 2026-08-09
+
+2,041 of 2,500 tokens, ETA 20:17 that evening. It had also slowed markedly: **57.8
+s/token early, 90.6 late** (1.57x), against the **34 s/token** this file records as
+achieved and the **~29.6 s/token** `tests/test_resident_cache.py` predicts for I/O at 32
+GiB resident. The machine was 24.95 GiB into 25.6 GiB of swap with the server process at
+a 51 GB footprint. That slowdown is what the branch below addresses.
+
+## Branch in flight: `mla-latent-cache`
+
+Four commits, **not merged, not yet validated against real weights.** Everything about
+the comparison — baseline, procedure, predictions — is in `docs/kv-cache/README.md`.
+Read that before doing anything else with this branch.
+
+**What it changes.** `master` cached the MLA key/value expanded per head. The tensors
+those are built from are 53.3x smaller, and `kv_b` absorbs into the query and output
+projections, so caching the latent instead is exact rather than approximate:
+**2,949,120 -> 55,296 B/token** across the 24 MLA layers, which at the run's 2,371-token
+context is **6.51 GiB -> 0.12 GiB**. Appends are also chunked now; master reallocated and
+copied the whole cache every decode step (measured: 255 reallocations per 256 appends,
+now 1).
+
+Verified lossless to **3.0e-07** against an independent fp64 oracle and against a frozen
+copy of the master path, holding across every decode step. The synthetic model returns
+the same six tokens as master across all six execution paths.
+
+**What is NOT verified.** Eight suites touch the checkpoint volume and were skipped to
+avoid contending with the run: `test_attention_mlx`, `test_layer_mlx`, `test_model_mlx`,
+`test_moe_mlx`, `test_full_parity`, `test_state_roundtrip`, `test_mxfp4_mlx`,
+`test_mxfp4_kernel`. **Run these first**, before the A/B.
+
+**Do not over-trust the causal story.** The slowdown is front-loaded and saturating, not
+linear: +53.4 s/tok per 1k context over the first third, then **-7.9** over the last
+third, plateauing around token 800. A per-token O(T) copy would keep costing more
+forever; it does not. And MoE expert-routing diversity produces the same curve shape with
+no involvement from the KV cache. Both mechanisms fit the data — the A/B is what
+discriminates them. The memory result (6.51 GiB -> 0.12 GiB) is arithmetic plus a
+losslessness proof and stands either way.
+
+Quantised latent storage (`mla_cache_bits`, `air_llm/models/kimi_k3/mla_quant.py`) is
+implemented and **off by default**; it saves ~90 MiB at this context and only earns its
+place past ~32k. Its quality gates run on random weights, which makes the latent Gaussian
+by CLT — so `test_mla_quant.py` gate Q6, on whether the TurboQuant/VeloxQuant rotation
+trick transfers here, is **inconclusive rather than negative** until re-run on real
+latents.
+
+State format went to **v2**; a v1 file cannot be upgraded (the expansion through `kv_b`
+is not invertible) and `load()` refuses it with that reason.
+
 ## Hardware / data layout
 
 | | |
@@ -73,6 +126,13 @@ inference** (45 MB/s on the random reads this workload needs).
 
 ## Open threads
 
+0. **Finish the KV-cache A/B** (`docs/kv-cache/README.md`). Blocked on the run above.
+   Order: keep the master result, run the eight checkpoint suites on the branch, restart
+   the server on the branch with identical flags, re-run the same prompt into
+   `runs/polymath-latent`, then
+   `python tools/kv_cache_report.py runs/polymath-latent --label AFTER --compare docs/kv-cache/baseline-master.json`.
+   Record a null result if that is what happens; it relocates the bottleneck to expert
+   routing, which is worth knowing.
 1. **Spec section 16 criterion 5** asks for top-1 parity over 16 tokens; verified for
    1 token at full depth (`k3ref` costs ~14 min/token, so 16 is ~3.5 h). The one
    criterion not met to the letter.
@@ -100,3 +160,11 @@ inference** (45 MB/s on the random reads this workload needs).
   the receive channel. Cancellation is detected structurally instead.
 * **Prefill is expensive**: every prompt token routes independently, so a 291-token
   prompt takes ~10 min before the first output token.
+* **Fit segmented slopes, not one line.** The s/token curve bends hard around token 800.
+  A single OLS fit over the whole run reported +16.1 s/tok per 1k context, which is true
+  of no part of it — the first third is +53.4 and the last is -7.9. `kv_cache_report.py`
+  reports thirds for this reason.
+* **A test that compares execution paths against each other can pass while all of them
+  are wrong together.** `test_synthetic_integration.py` checks six paths for agreement,
+  so it stays green if a change moves all six. Confirm token IDs against `master`
+  (`git stash`, run, `git stash pop`) before believing it.
