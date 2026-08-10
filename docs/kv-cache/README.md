@@ -241,6 +241,54 @@ diff <(fold -w 100 runs/polymath/output.txt) \
 
 ---
 
+## What is left for flat s/token
+
+Arithmetic, not intuition. Per decode step, at four context lengths:
+
+| ctx | MLA FLOP/tok | cache read/tok | **master** cache read/tok | cache resident |
+|---:|---:|---:|---:|---:|
+| 2,492 | 12.5 GF | 131 MiB | **6.8 GiB** | 0.13 GiB |
+| 8,192 | 41.1 GF | 432 MiB | **22.5 GiB** | 0.42 GiB |
+| 32,768 | 164.3 GF | 1.7 GiB | **90.0 GiB** | 1.69 GiB |
+| 131,072 | 657.1 GF | 6.8 GiB | **360.0 GiB** | 6.75 GiB |
+
+For scale, the O(1) per-token costs: dense weight stream **73.7 GiB** at 32 GiB resident
+(~29.6 s/token), lm_head **2.19 GiB**, compute ~2.0 s/token.
+
+**The context-driven term is now solved, and the master column shows why it mattered.**
+At the baseline run's 2,492-token context master re-read **6.8 GiB of KV cache per token**
+on top of 73.7 GiB of dense weights — ~9% of all traffic, and it was coming off a
+swapping machine. That is now 131 MiB, or 0.17% of the dense stream. At 32k master would
+have needed 90 GiB/token of cache reads alone, more than the entire weight stream; it was
+never going to get there.
+
+The remaining O(T) terms stay negligible against a ~30 s/token I/O floor until well past
+32k. **s/token should now be flat in context.** Note the absorbed form costs ~3.4× more
+attention FLOPs than master's expanded form (512-wide dots instead of 192/128) — that is
+the deliberate trade, and at 12.5 GF/token it is invisible next to the I/O.
+
+So "flat" is largely done, and it is not the same problem as "fast". What sets the number
+now is O(1) in context:
+
+1. **Measure before optimising.** Run the A/B with `--token-log` on both sides and
+   correlate s/token against `experts_loaded`. The baseline's 109 → 72 s/token tail swing
+   is either routing or it is not, and this answers it in one run. Everything below is
+   speculative until it does.
+2. **Possibly raise `--resident-gb`.** `test_resident_cache` measures 32 GiB → 29.6
+   s/token, 40 GiB → 27.2, 45 GiB → 25.7. The latent cache freed ~6.7 GiB, which is
+   roughly one step on that ladder. **But check the footprint first** — the baseline ran
+   at a 51 GB process footprint on a 64 GiB machine with 25 GiB of swap consumed, so the
+   freed memory may be needed just to get back under the cliff. Raising resident-gb
+   blindly could put it straight back into thrash.
+3. **Expert residency, if the routing correlation holds.** Prefill is the strongest hint:
+   669 s for a 295-token prompt is ~8 token-equivalents, and the mechanism is that every
+   prompt token routes independently, touching far more distinct experts. Note the LRU
+   warning in `SESSION.md` is about the cyclic *layer* scan; expert reuse across tokens is
+   a different access pattern and is not obviously pathological.
+4. **Skip `causal_mask` when T == 1.** During decode the single query sees every cached
+   position, so the mask is all zeros — an allocation and a 96 × Tk add per MLA layer per
+   token, for nothing. Marginal (~5.7M element-adds/token at 2.5k), but free.
+
 ## Still open
 
 - **Real-weight quantisation quality.** `tests/test_mla_quant.py` gates Q1/Q2/Q6 run on
