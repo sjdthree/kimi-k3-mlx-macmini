@@ -212,6 +212,19 @@ python tools/kv_cache_report.py runs/polymath-latent --label AFTER \
 or the comparison measures two changes at once. Raising it is a separate experiment, and
 the footprint numbers from this run are what tell you whether there is room.
 
+**Smoke-test before committing two days.** Between steps 3 and 4, ask for 2 tokens and
+check the log actually appeared with populated counters. One assertion carries most of
+the value:
+
+```
+mla_cache_bytes delta == 55,296 B/token     # 24 layers x (512+64) x 4, the LATENT rate
+                                            # master's would be 2,949,120
+```
+
+That single number proves the branch's cache is live on the real checkpoint, which no
+synthetic test can establish. Discovering otherwise four hours into a two-day run is the
+failure this avoids.
+
 ### The attribution does not need an instrumented before-run
 
 The baseline ran without `--token-log`, and re-running master to collect it would cost
