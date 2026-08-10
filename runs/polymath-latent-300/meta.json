@@ -1,0 +1,7 @@
+{
+  "prompt_file": "prompts/04_polymath_multi_expert.md",
+  "model": "chat",
+  "base_url": "http://127.0.0.1:8080/v1",
+  "max_tokens": 300,
+  "started": "2026-08-09T21:23:14"
+}

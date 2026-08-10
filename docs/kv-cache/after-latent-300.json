@@ -1,0 +1,141 @@
+{
+  "run": "runs/polymath-latent-300",
+  "state": "done",
+  "prompt_file": "prompts/04_polymath_multi_expert.md",
+  "tokens_generated": 300,
+  "prompt_tokens": 295,
+  "final_context": 595,
+  "elapsed_s": 14417.6,
+  "mean_s_per_token": 48.1,
+  "ttft_s": 645.2,
+  "samples": 29,
+  "first_decile_s_per_token": 44.4,
+  "last_decile_s_per_token": 46.7,
+  "degradation_ratio": 1.052,
+  "slope_s_per_token_per_1k_ctx": 6.596,
+  "slope_first_third_per_1k_ctx": 20.833,
+  "slope_last_third_per_1k_ctx": 6.667,
+  "intercept_s_per_token": 44.95,
+  "mla_cache_bytes_at_end": {
+    "expanded": 1754726400,
+    "latent": 32901120
+  },
+  "curve": [
+    {
+      "token": 20,
+      "s_per_token": 45.1
+    },
+    {
+      "token": 30,
+      "s_per_token": 43.7
+    },
+    {
+      "token": 40,
+      "s_per_token": 44.1
+    },
+    {
+      "token": 50,
+      "s_per_token": 46.1
+    },
+    {
+      "token": 60,
+      "s_per_token": 45.3
+    },
+    {
+      "token": 70,
+      "s_per_token": 45.4
+    },
+    {
+      "token": 80,
+      "s_per_token": 45.6
+    },
+    {
+      "token": 90,
+      "s_per_token": 45.5
+    },
+    {
+      "token": 100,
+      "s_per_token": 46.3
+    },
+    {
+      "token": 110,
+      "s_per_token": 46.1
+    },
+    {
+      "token": 120,
+      "s_per_token": 46.1
+    },
+    {
+      "token": 130,
+      "s_per_token": 46.6
+    },
+    {
+      "token": 140,
+      "s_per_token": 46.5
+    },
+    {
+      "token": 150,
+      "s_per_token": 45.9
+    },
+    {
+      "token": 160,
+      "s_per_token": 46.0
+    },
+    {
+      "token": 170,
+      "s_per_token": 46.1
+    },
+    {
+      "token": 180,
+      "s_per_token": 46.2
+    },
+    {
+      "token": 190,
+      "s_per_token": 46.3
+    },
+    {
+      "token": 200,
+      "s_per_token": 45.9
+    },
+    {
+      "token": 210,
+      "s_per_token": 46.4
+    },
+    {
+      "token": 220,
+      "s_per_token": 45.9
+    },
+    {
+      "token": 230,
+      "s_per_token": 46.6
+    },
+    {
+      "token": 240,
+      "s_per_token": 46.4
+    },
+    {
+      "token": 250,
+      "s_per_token": 46.8
+    },
+    {
+      "token": 260,
+      "s_per_token": 46.5
+    },
+    {
+      "token": 270,
+      "s_per_token": 46.5
+    },
+    {
+      "token": 280,
+      "s_per_token": 46.8
+    },
+    {
+      "token": 290,
+      "s_per_token": 46.7
+    },
+    {
+      "token": 300,
+      "s_per_token": 46.7
+    }
+  ]
+}

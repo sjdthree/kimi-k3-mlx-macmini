@@ -273,9 +273,65 @@ separates them using the after-run alone. Step 5 prints that table.
 Optional, if the within-run result is ambiguous: a short instrumented master run (~150
 tokens, ~3.5 h) gives routing data at matched context for a fraction of the cost.
 
-### Results
+### Results — 2026-08-10T01:23:31
 
-_(paste the output of step 5 here)_
+300 tokens, `finish_reason=length`, 4 h 00 m elapsed, prefill 645 s (baseline: 669 s).
+Matched to master's first 300 tokens.
+
+| metric | master @300 | branch @300 | change |
+|---|---:|---:|---:|
+| mean s/token | 60.09 | **48.10** | **−20.0%** |
+| first-decile | 52.70 | 44.40 | −15.7% |
+| last-decile | 67.00 | 46.70 | **−30.3%** |
+| degradation (last/first) | 1.271 | **1.052** | −17.2% |
+| **slope, s/tok per 1k ctx** | **+49.39** | **+6.60** | **−86.6%** |
+| slope, first third | +82.00 | +20.83 | −74.6% |
+| slope, last third | +73.67 | +6.67 | −90.9% |
+| MLA cache @595-token ctx | 1.63 GiB | 0.03 GiB | 53.3× |
+
+The curve, which is the actual finding — 45.1 at token 20 to 46.7 at token 300, a **3.5%
+rise where master rose 27%**:
+
+| token | 20 | 60 | 100 | 140 | 180 | 220 | 260 | 300 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| branch | 45.1 | 45.3 | 46.3 | 46.5 | 46.2 | 45.9 | 46.5 | 46.7 |
+| master | 52.4 | 55.6 | 58.9 | 61.0 | 60.8 | 63.4 | 65.9 | 67.0 |
+
+### Verdict against the pre-registered prediction
+
+The prediction was: *cache was the cause* → flat near 52.7, degradation ~1.0, slope ~0;
+*routing dominates* → climbs to ~67 like master.
+
+**The cache was the dominant cause over this range.** Degradation 1.052 against a
+predicted ~1.0, slope +6.6 against a predicted ~0 — and the absolute level came in
+*better* than predicted (44–47 rather than 52.7), because master's 52.7 first-decile
+already carried cache overhead the prediction implicitly baked in.
+
+It is not a clean sweep. A residual +6.6 s/tok per 1k slope and a +0.19 context
+correlation remain, so something still scales with context. That is the "partial" outcome,
+weighted heavily toward the cache.
+
+**This reverses the mid-run reading.** After the baseline's tail dropped 109 → 72 s/token
+this document concluded the evidence "tilts toward the confound". Over the first 300
+tokens it does not — the cache was carrying most of the climb. Both can hold: the cache
+drives the early climb, and something content-dependent drives the late tail swing. The
+tail remains unexplained.
+
+### What this run CANNOT tell you
+
+1. **Attribution failed.** The routing counters are structurally constant — 4,416 experts
+   and 102,622,070,784 bytes read on every single decode step, while s/token varied. They
+   cannot correlate with anything. `cache_hits`/`cache_misses` were added afterwards
+   (`engine.py`) and need a future run.
+2. **300 tokens, not 2,197.** Master kept degrading to ~800 tokens and 93 s/token. Whether
+   the branch stays flat that far is extrapolation, though an 86.6% lower slope is a
+   strong basis for it.
+3. **The tail drop is still unexplained.** It cannot have been "fewer experts loaded" —
+   that number never changes.
+
+Output quality is intact: the 300-token answer identifies the `(t + m*N) >> 64` undefined
+behaviour and reaches the `__umul64hi` correction. It stops at `finish_reason=length`
+mid-audit, as a 300-token cap requires.
 
 | metric | before | after | change |
 |---|---:|---:|---:|

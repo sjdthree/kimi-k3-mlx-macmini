@@ -1,0 +1,23 @@
+ # Multi-Domain Audit: Montgomery Multiplication CUDA Kernel
+
+## 1. CUDA Architecture & Hardware Performance
+
+### Critical Overflow Bug
+The expression `(t + m * N) >> 64` exhibits **undefined behavior** in C++:
+- `t` is `uint64_t`, so `t + m * N` wraps modulo 2^64
+- Right-shifting a 64-bit value by 64 is UB (typically yields the original value on x86, zero on ARM)
+- The intended computation requires 128-bit arithmetic: `(t + m*N) / 2^64`
+
+### 64-bit Multiplication Overhead
+On NVIDIA SMs (Compute Capability 3.0+):
+- `uint64_t` multiplication decomposes into multiple 32-bit `IMAD` instructions
+- `a[idx] * b[idx]` generates ~4-6 instructions (low 64 bits only)
+- Full 128-bit product requires `__umul64hi()` + regular multiply (2 instructions)
+- **Throughput impact**: 64-bit ops execute at 1/2 to 1/4 the rate of 32-bit ops on consumer GPUs
+
+### Memory Coalescing
+```cpp
+int idx = blockIdx.x * blockDim.x + threadIdx.x;
+uint64_t t = a[idx] * b[idx];
+```
+- **Coalesced access**: Consecutive threads read consecutive `uint64_t` elements (8-byte stride
