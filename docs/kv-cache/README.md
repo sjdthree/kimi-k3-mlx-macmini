@@ -448,6 +448,38 @@ swap. The branch reaches the same context in 72 minutes on a 6-hour-old server. 
 any gap is system drift, not cache size. That is exactly why the within-branch comparison
 above is the primary measurement and this one is a reference.
 
+### Long prompts were never possible on this model — on master either
+
+Two attempts died in prefill at layer 0 (a KDA layer) before one got through:
+
+| attempt | ceiling | peak | survived | outcome |
+|---|---:|---:|---:|---|
+| 1 | 48 GiB | 48.9 GiB | 4 m 09 s | MemoryError |
+| 2, after the KDA fix | 48 GiB | 48.4 GiB | 14 m 19 s | MemoryError |
+| 3 | 58 GiB | _pending_ | | |
+
+`attention_kda.py` is untouched by this branch (`git diff master...HEAD`), so this is a
+pre-existing limit that every earlier run missed by using a 291-token prompt.
+`--max-input-tokens` defaults to 8192, which was aspirational: anything past roughly a
+thousand tokens hits this.
+
+**The KDA fix is real but was not the main consumer, and the numbers say so.** Forcing
+evaluation every 64 recurrence steps is correct — `tests/test_kda_prefill_memory.py`
+shows bit-identical results and 4× the prompt costing 1.32× the memory instead of 4×.
+But at T=1955 on the real model it moved the peak only 48.9 → 48.4 GiB. I predicted the
+live state chain was ~11.5 GiB; recovering 0.5 GiB means MLX was already releasing most
+of it, and **the dominant consumer at long prefill is still unidentified.**
+
+Candidates not yet ruled out, at T=1955 with the 32 GiB resident cache leaving ~16 GiB of
+headroom: the dense MLP at layer 0 materialising `[1, 1955, 67584]` fp32 (528 MiB) plus
+several same-sized `situ` temporaries; the KDA per-step `[B,H,D,D]` temporaries inside a
+64-step window; `apply_attn_res` over a `[1955, k, 7168]` block residual. None of these
+individually accounts for 16 GiB, which is exactly why attempt 3 raises the ceiling — to
+record the true peak instead of guessing at it a third time.
+
+Only the safety ceiling moved (48 → 58 GiB on a 64 GiB machine). `--resident-gb` stays at
+32 so the run remains comparable with `polymath-latent-300`.
+
 ### Prediction
 
 If the latent cache is what flattened the 300-token curve, the branch should hold **~46–48
