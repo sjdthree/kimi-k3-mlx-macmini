@@ -180,34 +180,48 @@ such rather than buried.
 
 Same prompt, same target, same server flags — only the branch differs.
 
+Steps 1 and 2 are **done** (2026-08-09). The before-run finished and its artifacts are
+committed; the checkpoint suites pass on real weights.
+
 ```bash
-# 1. the before-run must be finished and its result kept
-cat runs/polymath/progress.json          # expect state: done
-git checkout master && git add -f runs/polymath/output.txt runs/polymath/job.log
-
-# 2. checkpoint-dependent suites, which could not run while the volume was busy
-conda activate airllm && git checkout mla-latent-cache
-for t in test_attention_mlx test_layer_mlx test_model_mlx test_moe_mlx \
-         test_full_parity test_state_roundtrip test_mxfp4_mlx test_mxfp4_kernel; do
-    python tests/$t.py || echo "FAILED: $t"
-done
-
-# 3. restart the server on the branch, identical flags
+# 3. restart the server on the branch. Identical flags to the baseline PLUS --token-log.
+#    Kill the old one first -- it is idle but still holds the resident cache.
+pkill -f "air_llm.serve" ; sleep 5
 export AIR_LLM_API_KEYS=sk-k3
+conda activate airllm && cd ~/kimi-k3-mlx
+git checkout mla-latent-cache
 nohup python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
     --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
     --mode runtime --resident-gb 32 --port 8080 --max-output-tokens 3000 \
+    --token-log runs/polymath-latent/tokens.jsonl \
     > /tmp/serve-latent.log 2>&1 &
 
-# 4. the same job, to a new directory
+# 4. the same prompt, same target, to a new directory (~2 days)
 python tools/run_long_job.py --prompt-file prompts/04_polymath_multi_expert.md \
     --out runs/polymath-latent --max-tokens 2500
 
-# 5. harvest and diff
+# 5. harvest, diff, and attribute
 python tools/kv_cache_report.py runs/polymath-latent --label AFTER \
+    --prompt-tokens 295 \
     --compare docs/kv-cache/baseline-master.json \
+    --token-log runs/polymath-latent/tokens.jsonl \
     --json docs/kv-cache/after-latent.json
 ```
+
+**Keep `--resident-gb` at 32 for this run.** It is the only variable that must not move,
+or the comparison measures two changes at once. Raising it is a separate experiment, and
+the footprint numbers from this run are what tell you whether there is room.
+
+### The attribution does not need an instrumented before-run
+
+The baseline ran without `--token-log`, and re-running master to collect it would cost
+another two days. It is not necessary: **the decisive test is within a single run.**
+Context and routing vary independently inside one generation — context rises
+monotonically, routing wanders with the content — so correlating s/token against each
+separates them using the after-run alone. Step 5 prints that table.
+
+Optional, if the within-run result is ambiguous: a short instrumented master run (~150
+tokens, ~3.5 h) gives routing data at matched context for a fraction of the cost.
 
 ### Results
 

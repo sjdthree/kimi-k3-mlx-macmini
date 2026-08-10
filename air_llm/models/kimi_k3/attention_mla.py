@@ -196,7 +196,14 @@ class MLAAttention:
         s = qa @ mx.expand_dims(lat.transpose(0, 2, 1), 1)           # [B,H,T,Tk]
         # rope half is MQA-shared: one [B,1,rope,Tk] operand for all heads
         s = s + q_rot @ mx.expand_dims(rot.transpose(0, 2, 1), 1)
-        s = s * (qhd ** -0.5) + causal_mask(T, Tk)
+        s = s * (qhd ** -0.5)
+        if T > 1:
+            # Decode (T == 1) needs no mask: causal_mask places the queries at the LAST
+            # T positions, so a lone query sits at Tk-1 and every cached position is
+            # visible -- the mask is all zeros. Skipping it drops an allocation and a
+            # [B,H,1,Tk] add per MLA layer per token. Gate N2 (incremental decode ==
+            # one-shot) is what proves this is not a masking bug.
+            s = s + causal_mask(T, Tk)
 
         probs = mx.softmax(s.astype(mx.float32), axis=-1)
 

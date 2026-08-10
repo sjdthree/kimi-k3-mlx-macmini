@@ -127,6 +127,66 @@ def fmt_gib(n: int) -> str:
     return f"{n / 2 ** 30:.2f} GiB"
 
 
+def pearson(xs, ys) -> float:
+    n = len(xs)
+    if n < 3:
+        return float("nan")
+    mx_, my = sum(xs) / n, sum(ys) / n
+    sxy = sum((x - mx_) * (y - my) for x, y in zip(xs, ys))
+    sxx = sum((x - mx_) ** 2 for x in xs)
+    syy = sum((y - my) ** 2 for y in ys)
+    d = (sxx * syy) ** 0.5
+    return sxy / d if d else float("nan")
+
+
+def attribute(log_path: Path) -> str:
+    """The decisive test, and it is WITHIN a single run.
+
+    Two candidate mechanisms drive per-token cost: context length (KV cache) and expert
+    routing. They are separable without an instrumented before-run, because they vary
+    independently *inside* one generation -- context rises monotonically while routing
+    wanders with the content. Correlate s/token against each and the winner is visible.
+
+    Decode steps only; step 0 is prefill and is a different kind of work.
+    """
+    recs = [json.loads(l) for l in log_path.read_text().splitlines() if l.strip()]
+    d = [r for r in recs if r.get("step_tokens") == 1]
+    if len(d) < 10:
+        return f"\n_(token log has {len(d)} decode records; too few to attribute)_"
+
+    t = [r["elapsed_s"] for r in d]
+    L = ["", "### Attribution — what does per-token cost actually track?", "",
+         f"{len(d)} decode steps from `{log_path}`.", "",
+         "| driver | correlation with s/token |", "|---|---:|"]
+    for name, key in (("context length (KV cache)", "context"),
+                      ("experts loaded (routing)", "experts_loaded"),
+                      ("expert bytes (routing)", "expert_bytes"),
+                      ("total bytes read", "bytes_read")):
+        if key not in d[0]:
+            continue
+        col = [r[key] for r in d]
+        # A constant driver has no correlation to report. Say so, rather than printing
+        # nan and leaving the reader to wonder whether the tool broke: "this never
+        # varied" is itself a finding -- it rules the driver out.
+        if len(set(col)) == 1:
+            L.append(f"| {name} | _constant at {col[0]:,} — cannot drive variation_ |")
+        else:
+            L.append(f"| {name} | {pearson(col, t):+.3f} |")
+
+    lo = sorted(d, key=lambda r: r["experts_loaded"])[:len(d) // 4]
+    hi = sorted(d, key=lambda r: r["experts_loaded"])[-len(d) // 4:]
+    L += ["", "Quartiles by experts loaded (context is roughly balanced across both if "
+          "routing is the driver):", "",
+          "| | experts | s/token | mean context |", "|---|---:|---:|---:|"]
+    for nm, g in (("fewest-expert quartile", lo), ("most-expert quartile", hi)):
+        L.append(f"| {nm} | {sum(r['experts_loaded'] for r in g)/len(g):.0f} | "
+                 f"{sum(r['elapsed_s'] for r in g)/len(g):.1f} | "
+                 f"{sum(r['context'] for r in g)/len(g):.0f} |")
+    L += ["", "_A strong routing correlation with a flat context correlation means the "
+          "KV cache was never the bottleneck. Record that outcome._"]
+    return "\n".join(L)
+
+
 def render(a: dict, label: str, base: dict | None) -> str:
     L = []
     W = "| {:<34} | {:>18} |".format
@@ -198,11 +258,16 @@ def main() -> int:
                          "339 is the estimate for 04_polymath_multi_expert.md.")
     ap.add_argument("--json", type=Path, help="write the machine-readable record here")
     ap.add_argument("--compare", type=Path, help="a --json record to diff against")
+    ap.add_argument("--token-log", type=Path,
+                    help="per-token JSONL from `serve --token-log`; adds the attribution "
+                         "section that separates context-driven from routing-driven cost")
     a = ap.parse_args()
 
     rec = analyse(a.run, a.prompt_tokens)
     base = json.loads(a.compare.read_text()) if a.compare else None
     print(render(rec, a.label, base))
+    if a.token_log:
+        print(attribute(a.token_log))
     if a.json:
         a.json.write_text(json.dumps(rec, indent=2))
         print(f"\n<!-- record written to {a.json} -->")
