@@ -73,28 +73,44 @@ It slowed markedly over the run: **57.9 s/token early, 80.0 late**, against the 
 s/token this file records as achieved. See `docs/kv-cache/README.md` for the full curve
 and why the shape argues against the KV cache being the cause.
 
-## What is running right now (2026-08-09 21:23)
+## A/B complete — the branch works, twice measured
 
-The **A/B after-run**: 300 tokens on the branch, `runs/polymath-latent-300`, job PID
-35801 under `caffeinate`, server PID 35728 on the branch with `--token-log`. ~3 h.
+Full write-up in `docs/kv-cache/README.md`. Both runs' artifacts are committed.
 
-300 rather than a matching 2,500 because the baseline degraded almost entirely inside its
-first ~800 tokens and then plateaued — the short run lands on the rising portion, which is
-the part needing explanation. `kv_cache_report.py` truncates the baseline to a matching
-token count automatically.
+| run | context | s/token | vs master |
+|---|---:|---:|---|
+| `polymath-latent-300` | 296–594 | **48.10** | master 60.09 → **−20%** |
+| `longctx-2k` | 1,960–2,108 | **34.97** | master 90.6 → **−61%** |
 
-**Pre-registered target (master's first 300 tokens):** mean 60.09 s/token, 52.70 → 67.00,
-degradation 1.271x, slope +49.39 per 1k ctx. Flat near 52.7 means the cache was the cause;
-climbing to ~67 like master means routing dominates and the next work is expert residency.
+Context scaling is flat: slope +6.6 s/tok per 1k at short context, **−4.33** at 2k, against
+master's +49.4. The branch is *faster* at context 2,108 than at 595.
 
-The smoke test before launch showed the first decode token at **34.03 s** — suggestive,
-but one sample at context 8 against master's decile at context ~300. Not a result.
+**The finding that matters more than the speedup.** Comparing the two branch runs
+token-for-token, `bytes_read` (102,622,070,784), `expert_bytes` and `experts_loaded` are
+byte-for-byte identical per token, while effective throughput went 2.08 → 2.73 GiB/s. Same
+bytes, same experts, 31% faster. The only remaining variable is where the bytes came from —
+pinned resident cache versus disk. The 1,959-token prefill warmed the cache far more than
+the 7-token smoke request that preceded the short run.
+
+So: **once the KV cache is fixed, per-token cost is governed by resident-cache hit rate,
+not context length.** The old 90 s/token had three contributors — the KV cache, ~40 h of
+accumulated swap, and an under-warmed resident cache — and attributing it wholly to any one
+of them was wrong.
+
+## What is running right now (2026-08-10 ~10:00)
+
+`runs/resident40` — the next experiment. Prompt 04, 150 tokens, **`--resident-gb 40`**
+(up from 32) and nothing else changed, so it is a clean A/B against
+`polymath-latent-300`. Server PID 44353, job PID 44358.
+
+`tests/test_resident_cache.py` predicts 32 → 40 GiB moves I/O from 29.6 → 27.2 s/token
+(~8%). This is also the first run carrying `cache_hits`/`cache_misses`/`peak_bytes` in the
+token log, so it should show the hit rate directly rather than by inference.
 
 ```bash
-cat runs/polymath-latent-300/progress.json
-python tools/kv_cache_report.py runs/polymath-latent-300 --label AFTER \
-    --prompt-tokens 295 --compare docs/kv-cache/baseline-master.json \
-    --token-log runs/polymath-latent-300/tokens.jsonl
+cat runs/resident40/progress.json
+python tools/kv_cache_report.py runs/resident40 --label "resident 40" \
+    --prompt-tokens 295 --token-log runs/resident40/tokens.jsonl
 ```
 
 ## Branch in flight: `mla-latent-cache`
@@ -157,13 +173,17 @@ inference** (45 MB/s on the random reads this workload needs).
 
 ## Open threads
 
-0. **Finish the KV-cache A/B** (`docs/kv-cache/README.md`). Blocked on the run above.
-   Order: keep the master result, run the eight checkpoint suites on the branch, restart
-   the server on the branch with identical flags, re-run the same prompt into
-   `runs/polymath-latent`, then
-   `python tools/kv_cache_report.py runs/polymath-latent --label AFTER --compare docs/kv-cache/baseline-master.json`.
-   Record a null result if that is what happens; it relocates the bottleneck to expert
-   routing, which is worth knowing.
+0. **Expert residency is now the bottleneck, not the KV cache.** The A/B settled it:
+   identical bytes read per token, 31% throughput difference, explained only by resident
+   cache hit rate. `--resident-gb` uses fill-and-pin, so it keeps whatever it saw FIRST,
+   which is not necessarily the most-routed 30% of a 105.7 GiB working set. Pinning by
+   observed routing frequency is the obvious unexplored win, and needs per-expert hit
+   counters that do not exist yet.
+0b. **Long prompts have a memory wall in prefill, cause still unknown.** A 1,955-token
+   prompt needs a 58 GiB ceiling; 48 GiB fails at layer 0. Bounding the KDA recurrence
+   (`EVAL_EVERY`) recovered only 0.5 GiB of the ~16 GiB in play, so the dominant consumer
+   is still unidentified. `peak_bytes` now lands in the token log, which should name it on
+   the next long run.
 1. **Spec section 16 criterion 5** asks for top-1 parity over 16 tokens; verified for
    1 token at full depth (`k3ref` costs ~14 min/token, so 16 is ~3.5 h). The one
    criterion not met to the letter.
