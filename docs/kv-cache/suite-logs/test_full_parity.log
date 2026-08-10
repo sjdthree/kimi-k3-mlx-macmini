@@ -1,0 +1,26 @@
+~/kimi-k3-mlx/k3ref/weights.py:101: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:219.)
+  return torch.from_numpy(np.ascontiguousarray(a)).float()
+M9 gate: full 93-layer parity, 1 token(s)
+  prompt [1008, 10484, 318, 15383, 387]   device Device(gpu, 0)
+==============================================================================
+    L 0 cos 1.00000000  routers ok 0/0       3s
+    L12 cos 1.00000000  routers ok 12/12     272s
+    L24 cos 0.99999988  routers ok 24/24     681s
+    L36 cos 0.99999994  routers ok 36/36    1097s
+    L48 cos 1.00000000  routers ok 48/48    1499s
+    L60 cos 0.99999994  routers ok 60/60    1921s
+    L72 cos 1.00000012  routers ok 72/72    2369s
+    L84 cos 1.00000012  routers ok 84/84    2801s
+    L92 cos 0.99999994  routers ok 92/92    3070s
+
+  token 0: k3ref 17374  mlx 17374  (3075s)
+  [PASS] token 0 top-1 matches the oracle  17374 vs 17374
+  [PASS] token 0 router selection exact at all 92 MoE layers  0 layers differ
+  [PASS] token 0 worst per-layer cosine >= 0.999  0.99999988 at layer 22
+
+==============================================================================
+  k3ref : [17374]
+  mlx   : [17374]
+  [PASS] all generated tokens identical
+==============================================================================
+M9: PASS
