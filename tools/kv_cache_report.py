@@ -189,6 +189,8 @@ def attribute(log_path: Path) -> str:
          f"{len(d)} decode steps from `{log_path}`.", "",
          "| driver | correlation with s/token |", "|---|---:|"]
     for name, key in (("context length (KV cache)", "context"),
+                      ("resident-cache misses (routing)", "cache_misses"),
+                      ("resident-cache hit rate (routing)", "cache_hit_rate"),
                       ("experts loaded (routing)", "experts_loaded"),
                       ("expert bytes (routing)", "expert_bytes"),
                       ("total bytes read", "bytes_read")):

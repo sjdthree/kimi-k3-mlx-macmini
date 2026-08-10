@@ -100,6 +100,7 @@ class Engine:
         # separate "the KV cache grew" from "routing hit more experts". See
         # docs/kv-cache/README.md.
         self.token_log = Path(token_log) if token_log else None
+        self._prev_cache = (0, 0)     # (hits, misses), for per-token deltas
 
         self._lock = asyncio.Semaphore(1)
         self._queue_slots = asyncio.Semaphore(max(1, queue_size))
@@ -133,22 +134,40 @@ class Engine:
                    elapsed: float, state) -> None:
         """Append one JSON record per generated token.
 
-        The three counters are the point. `experts_loaded` and `expert_bytes` move with
-        ROUTING; `cache_bytes` and `context` move with CONTEXT LENGTH. A slowdown that
-        tracks the first is not a KV-cache problem, whatever the wall clock says -- which
-        is exactly the ambiguity the 2026-08-07 baseline run could not resolve.
+        `cache_bytes` and `context` move with CONTEXT LENGTH. The routing side needs more
+        care than it first appears:
+
+        `experts_loaded` and `expert_bytes` are STRUCTURALLY CONSTANT during decode --
+        every token routes top_k experts in each of the 92 MoE layers and loads 3
+        projections each, so the count is always 92*16*3 = 4416 and the byte total
+        follows from fixed shapes. Measured over 85 decode steps of the 2026-08-09
+        after-run: one distinct value each, while s/token varied by 28.2 s. They cannot
+        explain any variance, and logging them alone was a design error.
+
+        What actually varies is WHICH experts get routed, and therefore whether each read
+        hits the resident cache or goes to disk. That is `hits`/`misses`, so those are
+        logged as per-token deltas. A slowdown tracking `cache_misses` is a routing
+        problem; one tracking `context` is a KV-cache problem.
 
         Opened in append mode and flushed per token so an interrupted run keeps every
         record it produced, matching how run_long_job.py treats its own output.
         """
         try:
             mem = state.memory_report()
+            cs = self.src.cache_stats()
+            ph, pm = self._prev_cache
+            self._prev_cache = (cs["hits"], cs["misses"])
+            hits, misses = cs["hits"] - ph, cs["misses"] - pm
             rec = {
                 "index": index,
                 "token_id": token_id,
                 "step_tokens": len(ids),          # prompt length on step 0, else 1
                 "context": state.token_position,
                 "elapsed_s": round(elapsed, 3),
+                # per-token deltas -- these are the ones that actually vary
+                "cache_hits": hits,
+                "cache_misses": misses,
+                "cache_hit_rate": round(hits / (hits + misses), 4) if hits + misses else 0.0,
                 "bytes_read": self.src.bytes_read,
                 "expert_bytes": self.src.expert_bytes,
                 "experts_loaded": self.src.experts_loaded,
