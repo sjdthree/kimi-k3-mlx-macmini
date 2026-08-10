@@ -123,6 +123,36 @@ def analyse(run: Path, prompt_tokens: int) -> dict:
     }
 
 
+def summarise_curve(curve, upto: int) -> dict:
+    """Recompute the summary metrics over a token-limited slice of a stored curve.
+
+    Needed because a short run must not be compared against a long one's aggregates. The
+    baseline degraded over its first ~800 tokens and then plateaued, so its "last decile"
+    is a plateau figure; a 300-token run's last decile sits mid-climb. Comparing those two
+    directly would manufacture a result in whichever direction the slice happened to fall.
+    Truncating the baseline to the same token count makes it a like-for-like.
+    """
+    pts = [(p["token"], p["s_per_token"]) for p in curve if p["token"] <= upto]
+    if len(pts) < 4:
+        return {}
+    xs = [t for t, _ in pts]
+    ys = [s for _, s in pts]
+    k = max(1, len(pts) // 10)
+    early = sum(ys[:k]) / k
+    late = sum(ys[-k:]) / k
+    third = max(2, len(pts) // 3)
+    return {
+        "tokens_generated": xs[-1],
+        "first_decile_s_per_token": round(early, 2),
+        "last_decile_s_per_token": round(late, 2),
+        "degradation_ratio": round(late / early, 3) if early else None,
+        "slope_s_per_token_per_1k_ctx": round(ols(xs, ys)[0] * 1000, 3),
+        "slope_first_third_per_1k_ctx": round(ols(xs[:third], ys[:third])[0] * 1000, 3),
+        "slope_last_third_per_1k_ctx": round(ols(xs[-third:], ys[-third:])[0] * 1000, 3),
+        "mean_s_per_token": round(sum(ys) / len(ys), 2),
+    }
+
+
 def fmt_gib(n: int) -> str:
     return f"{n / 2 ** 30:.2f} GiB"
 
@@ -196,7 +226,17 @@ def render(a: dict, label: str, base: dict | None) -> str:
              f"{a['samples']} progress samples")
     L.append("")
     if base:
-        L.append("| metric | before | after | change |")
+        # Like-for-like or nothing: if the after-run is materially shorter, recompute the
+        # baseline over the same token range rather than comparing against its full-run
+        # aggregates.
+        note = ""
+        if base.get("curve") and a["tokens_generated"] < base["tokens_generated"] * 0.9:
+            trunc = summarise_curve(base["curve"], a["tokens_generated"])
+            if trunc:
+                base = {**base, **trunc}
+                note = (f" _(baseline truncated to its first {trunc['tokens_generated']} "
+                        f"tokens so the ranges match)_")
+        L.append(f"| metric | before{note} | after | change |")
         L.append("|---|---:|---:|---:|")
 
         def row(name, key, unit="", better="lower"):

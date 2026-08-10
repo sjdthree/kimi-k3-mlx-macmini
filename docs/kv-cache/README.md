@@ -1,8 +1,9 @@
 # KV cache: before / after
 
 Comparison record for the MLA latent-cache change (branch `mla-latent-cache`). The
-"before" half is captured from the in-flight `runs/polymath` job on `master`. The "after"
-half is blank until that job finishes and the same prompt is re-run on the branch.
+"before" half is the completed `runs/polymath` job on `master`. The "after" half is a
+300-token re-run of the same prompt on the branch — see the scope note below for why it
+is short.
 
 **Read the prediction section before filling in the results.** It is written first on
 purpose, so the comparison cannot be rationalised after the fact.
@@ -33,7 +34,7 @@ frozen copy of the master path, holding across every decode step. See
 
 Job: `runs/polymath`, PID 99281, started 2026-08-07T09:48:45, 2,500-token target.
 Prompt: `prompts/04_polymath_multi_expert.md` (CUDA / cryptography / formal-verification
-audit, ~339 tokens).
+audit, 295 tokens).
 Server: `python -m air_llm.serve --resident-gb 32 --port 8080`, PID 98807.
 Machine: Mac16,11, 64 GiB unified memory.
 
@@ -173,8 +174,44 @@ such rather than buried.
 
 ## AFTER — branch `mla-latent-cache`, latent cache
 
-> Not yet run. Blocked on `runs/polymath` finishing (~20:15 on 2026-08-09) so the two
-> runs do not contend for the checkpoint volume or for memory.
+> Not yet run. Blocked on `tests/test_full_parity.py`.
+
+### Scope: 300 tokens, not 2,500
+
+The after-run is **300 tokens (~7 h)**, not a matching 2,500-token run (~2 days). Two
+reasons, and the first is the important one:
+
+1. **The baseline degraded almost entirely within its first ~800 tokens** (52 → 93
+   s/token, slope +52 per 1k) and then plateaued. A 300-token run therefore lands
+   squarely on the rising portion — the part that actually needs explaining. Running to
+   2,500 mostly re-measures a plateau.
+2. **The attribution test is within-run**, so it needs enough decode steps for routing to
+   vary, not a long context.
+
+`kv_cache_report.py` truncates the baseline to the same token count when the after-run is
+materially shorter. Comparing a 300-token run's "last decile" against a 2,197-token run's
+plateau would manufacture a result in whichever direction the slice happened to fall.
+
+### Pre-registered target — master's first 300 tokens
+
+| metric | master @ 300 |
+|---|---:|
+| mean s/token | **60.09** |
+| first-decile s/token | 52.70 |
+| last-decile s/token | 67.00 |
+| degradation (last/first) | **1.271×** |
+| slope, s/tok per 1k ctx | **+49.39** |
+
+**If the KV cache was the cause:** the branch stays near 52.7 across all 300 tokens —
+degradation → ~1.0, slope → ~0, mean well under 60.
+
+**If routing dominates:** the branch climbs 52.7 → ~67 just like master, degradation
+~1.27, slope ~+49, mean ~60. The cache change would then be proven correct and
+irrelevant to speed, and the next work is expert residency, not the cache.
+
+A third outcome is possible and worth naming: **partial** — a reduced but non-zero climb,
+meaning both mechanisms contribute. The `--token-log` correlations are what would apportion
+it.
 
 ### Procedure
 
@@ -193,18 +230,18 @@ git checkout mla-latent-cache
 nohup python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
     --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
     --mode runtime --resident-gb 32 --port 8080 --max-output-tokens 3000 \
-    --token-log runs/polymath-latent/tokens.jsonl \
+    --token-log runs/polymath-latent-300/tokens.jsonl \
     > /tmp/serve-latent.log 2>&1 &
 
 # 4. the same prompt, same target, to a new directory (~2 days)
 python tools/run_long_job.py --prompt-file prompts/04_polymath_multi_expert.md \
-    --out runs/polymath-latent --max-tokens 2500
+    --out runs/polymath-latent-300 --max-tokens 300
 
 # 5. harvest, diff, and attribute
-python tools/kv_cache_report.py runs/polymath-latent --label AFTER \
+python tools/kv_cache_report.py runs/polymath-latent-300 --label AFTER \
     --prompt-tokens 295 \
     --compare docs/kv-cache/baseline-master.json \
-    --token-log runs/polymath-latent/tokens.jsonl \
+    --token-log runs/polymath-latent-300/tokens.jsonl \
     --json docs/kv-cache/after-latent.json
 ```
 
@@ -263,7 +300,7 @@ failure for 256/384-bit curves, and the `__umul64hi` correction?
 
 ```bash
 diff <(fold -w 100 runs/polymath/output.txt) \
-     <(fold -w 100 runs/polymath-latent/output.txt) | head -40
+     <(fold -w 100 runs/polymath-latent-300/output.txt) | head -40
 ```
 
 ---
