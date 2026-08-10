@@ -63,13 +63,39 @@ nohup python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
 
 If the run finished, keep the result deliberately: `git add -f runs/polymath/output.txt`.
 
-### Where it had got to on 2026-08-09
+### It finished 2026-08-09T12:50:44
 
-2,041 of 2,500 tokens, ETA 20:17 that evening. It had also slowed markedly: **57.8
-s/token early, 90.6 late** (1.57x), against the **34 s/token** this file records as
-achieved and the **~29.6 s/token** `tests/test_resident_cache.py` predicts for I/O at 32
-GiB resident. The machine was 24.95 GiB into 25.6 GiB of swap with the server process at
-a 51 GB footprint. That slowdown is what the branch below addresses.
+`finish_reason=stop` at **2,197 tokens** — the model ended its answer rather than reaching
+the 2,500 cap. 2 d 3 h 02 m, no resumes, 83.6 s/token mean. Artifacts are committed
+(`runs/` is gitignored; they were added with `-f`). Prompt is **295 tokens**.
+
+It slowed markedly over the run: **57.9 s/token early, 80.0 late**, against the 34
+s/token this file records as achieved. See `docs/kv-cache/README.md` for the full curve
+and why the shape argues against the KV cache being the cause.
+
+## What is running right now (2026-08-09 21:23)
+
+The **A/B after-run**: 300 tokens on the branch, `runs/polymath-latent-300`, job PID
+35801 under `caffeinate`, server PID 35728 on the branch with `--token-log`. ~3 h.
+
+300 rather than a matching 2,500 because the baseline degraded almost entirely inside its
+first ~800 tokens and then plateaued — the short run lands on the rising portion, which is
+the part needing explanation. `kv_cache_report.py` truncates the baseline to a matching
+token count automatically.
+
+**Pre-registered target (master's first 300 tokens):** mean 60.09 s/token, 52.70 → 67.00,
+degradation 1.271x, slope +49.39 per 1k ctx. Flat near 52.7 means the cache was the cause;
+climbing to ~67 like master means routing dominates and the next work is expert residency.
+
+The smoke test before launch showed the first decode token at **34.03 s** — suggestive,
+but one sample at context 8 against master's decile at context ~300. Not a result.
+
+```bash
+cat runs/polymath-latent-300/progress.json
+python tools/kv_cache_report.py runs/polymath-latent-300 --label AFTER \
+    --prompt-tokens 295 --compare docs/kv-cache/baseline-master.json \
+    --token-log runs/polymath-latent-300/tokens.jsonl
+```
 
 ## Branch in flight: `mla-latent-cache`
 
@@ -89,10 +115,15 @@ Verified lossless to **3.0e-07** against an independent fp64 oracle and against 
 copy of the master path, holding across every decode step. The synthetic model returns
 the same six tokens as master across all six execution paths.
 
-**What is NOT verified.** Eight suites touch the checkpoint volume and were skipped to
-avoid contending with the run: `test_attention_mlx`, `test_layer_mlx`, `test_model_mlx`,
-`test_moe_mlx`, `test_full_parity`, `test_state_roundtrip`, `test_mxfp4_mlx`,
-`test_mxfp4_kernel`. **Run these first**, before the A/B.
+**Real-weight validation: DONE 2026-08-09, all 9 checkpoint suites pass.** The decisive
+one is `test_full_parity` (M9, 93 layers, 3,095 s):
+
+    token 0 top-1 vs k3ref oracle    17374 == 17374
+    router selection                 exact at all 92 MoE layers, 0 differ
+    worst per-layer cosine           0.99999988 at layer 22
+
+That cosine is identical to the figure this file already records for master, so the
+branch reproduces master's numerics layer-for-layer on the real checkpoint.
 
 **Do not over-trust the causal story.** The slowdown is front-loaded and saturating, not
 linear: +53.4 s/tok per 1k context over the first third, then **-7.9** over the last

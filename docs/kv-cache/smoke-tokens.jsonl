@@ -1,0 +1,2 @@
+{"index": 0, "token_id": 38237, "step_tokens": 7, "context": 7, "elapsed_s": 80.514, "bytes_read": 228920505344, "expert_bytes": 117759688704, "experts_loaded": 20133, "cache_bytes": 465020928, "mla_cache_bytes": 387072, "kda_state_bytes": 464633856}
+{"index": 1, "token_id": 0, "step_tokens": 1, "context": 8, "elapsed_s": 34.03, "bytes_read": 102622070784, "expert_bytes": 25829572608, "experts_loaded": 4416, "cache_bytes": 465076224, "mla_cache_bytes": 442368, "kda_state_bytes": 464633856}
