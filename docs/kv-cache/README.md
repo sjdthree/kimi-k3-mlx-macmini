@@ -487,6 +487,51 @@ s/token at context 2,035**, statistically indistinguishable from its own 46.7 at
 595. A rise toward 60+ would mean something else scales with context that 300 tokens was
 too short to expose.
 
+### Result — 2026-08-10, and it beat the prediction
+
+| | value |
+|---|---:|
+| prefill | 1,959 tokens in 1,541 s (**0.79 s/prompt token**) |
+| decode | 149 tokens, context 1,960 → 2,108 |
+| first token (warming) | 102.0 s |
+| **steady-state mean** | **34.97 s/token** |
+| min / max | 34.2 / 61.5 |
+| quartiles | 35.3 · 34.8 · 34.9 · 34.9 |
+| **slope** | **−4.33 s/tok per 1k ctx** |
+| MLA cache at ctx 2,108 | **111.2 MiB** (master: 5.79 GiB) |
+
+Flat to within 0.5 s across the quartiles, with a *negative* slope. Against master's
+**90.6 s/token** at the same context, that is **2.59×** — and against the branch's own
+46.7 at context 595, it is *faster at 3.5× the context*.
+
+### Why the branch beat itself, and what it proves
+
+Comparing the two branch runs token-for-token:
+
+| | 300-tok run | longctx-2k |
+|---|---:|---:|
+| context | 296–594 | 1,960–2,108 |
+| bytes_read/token | 102,622,070,784 | 102,622,070,784 |
+| expert_bytes/token | 25,829,572,608 | 25,829,572,608 |
+| experts_loaded/token | 4,416 | 4,416 |
+| mean s/token | 46.1 | 35.0 |
+| **effective throughput** | **2.08 GiB/s** | **2.73 GiB/s** |
+
+**Identical bytes, identical experts, 31% faster.** The only variable left is where those
+bytes came from — resident cache in RAM versus the USB4 disk. The 1,959-token prefill
+routed through far more experts than the 7-token smoke request that warmed the 300-token
+run, so it populated the pinned cache much more thoroughly.
+
+That closes the loop this document has been circling since the baseline: **per-token cost
+is governed by resident-cache hit rate, not by context length.** Once the KV cache is
+fixed, context is free. The master baseline's ~90 s/token had three contributors, not one
+— the KV cache, ~40 hours of accumulated swap pressure, and an under-warmed resident
+cache.
+
+Output quality holds at long range: the answer opens by identifying the guaranteed
+deadlock from `__syncthreads()` after a data-dependent `return` and the out-of-bounds
+global access — both planted defects, cited from code ~1,500 tokens back.
+
 ## Still open
 
 - **Real-weight quantisation quality.** `tests/test_mla_quant.py` gates Q1/Q2/Q6 run on

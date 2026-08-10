@@ -1,0 +1,26 @@
+2026-08-10T08:35:02 ======================================================================
+2026-08-10T08:35:02 job start  prompt=prompts/05_longctx_cuda_audit.md  target=150 tokens
+2026-08-10T08:35:02   at ~34 s/token that is ~1.4 h of decoding, plus prefill
+2026-08-10T08:35:02   output dir: ~/kimi-k3-mlx/runs/longctx-2k
+2026-08-10T08:35:02 ======================================================================
+2026-08-10T08:35:02 attempt 1: requesting 150 more tokens (prefill will take ~10-20 min for a long prompt)
+2026-08-10T09:00:44 first token after 1541.3s (25.7 min of prefill)
+2026-08-10T09:07:30 10/150 tokens (6.7%) 194.8s/tok
+2026-08-10T09:13:16 20/150 tokens (13.3%) 114.7s/tok
+2026-08-10T09:19:01 30/150 tokens (20.0%) 88.0s/tok
+2026-08-10T09:24:46 40/150 tokens (26.7%) 74.6s/tok
+2026-08-10T09:30:33 50/150 tokens (33.3%) 66.6s/tok
+2026-08-10T09:36:19 60/150 tokens (40.0%) 61.3s/tok
+2026-08-10T09:42:08 70/150 tokens (46.7%) 57.5s/tok
+2026-08-10T09:47:57 80/150 tokens (53.3%) 54.7s/tok
+2026-08-10T09:53:46 90/150 tokens (60.0%) 52.5s/tok
+2026-08-10T09:59:35 100/150 tokens (66.7%) 50.7s/tok
+2026-08-10T10:05:25 110/150 tokens (73.3%) 49.3s/tok
+2026-08-10T10:11:13 120/150 tokens (80.0%) 48.1s/tok
+2026-08-10T10:17:03 130/150 tokens (86.7%) 47.1s/tok
+2026-08-10T10:22:52 140/150 tokens (93.3%) 46.2s/tok
+2026-08-10T10:28:41 150/150 tokens (100.0%) 45.5s/tok
+2026-08-10T10:28:41 finish_reason=length
+2026-08-10T10:28:41 usage: prompt=1959 completion=150
+2026-08-10T10:28:41 generation finished normally
+2026-08-10T10:28:41 done: 150 tokens, 1:53:38 elapsed, output in runs/longctx-2k/output.txt

@@ -1,0 +1,18 @@
+{
+  "state": "done",
+  "prompt_file": "prompts/05_longctx_cuda_audit.md",
+  "tokens_generated_total": 150,
+  "tokens_this_attempt": 150,
+  "target_tokens": 150,
+  "percent": 100.0,
+  "elapsed_s": 6818.9,
+  "elapsed_human": "1:53:38",
+  "seconds_per_token": 45.5,
+  "ttft_s": 1541.3,
+  "eta_human": null,
+  "eta_finish": null,
+  "resumes": 0,
+  "started": "2026-08-10T08:35:02",
+  "updated": "2026-08-10T10:28:41",
+  "output_bytes": 689
+}
