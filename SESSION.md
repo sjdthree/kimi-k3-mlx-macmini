@@ -97,20 +97,28 @@ not context length.** The old 90 s/token had three contributors — the KV cache
 accumulated swap, and an under-warmed resident cache — and attributing it wholly to any one
 of them was wrong.
 
-## What is running right now (2026-08-10 ~10:00)
+## What is running right now (2026-08-10 16:54)
 
-`runs/resident40` — the next experiment. Prompt 04, 150 tokens, **`--resident-gb 40`**
-(up from 32) and nothing else changed, so it is a clean A/B against
-`polymath-latent-300`. Server PID 44353, job PID 44358.
+**The final validation run.** Prompt 04, 2,500-token target — the exact baseline job —
+on the branch at `--resident-gb 8`. `runs/final-validation`, server PID 49436, job PID
+49445 under `caffeinate`. ETA ~13:00 on 2026-08-11.
 
-`tests/test_resident_cache.py` predicts 32 → 40 GiB moves I/O from 29.6 → 27.2 s/token
-(~8%). This is also the first run carrying `cache_hits`/`cache_misses`/`peak_bytes` in the
-token log, so it should show the hit rate directly rather than by inference.
+| | baseline | this run |
+|---|---:|---:|
+| resident | 32 GiB | **8 GiB** |
+| s/token | 83.6 | **~32.4 expected** |
+| wall clock | 51.0 h | **~20 h expected** |
+| peak / swap | 51 GB footprint, 25 GiB swap | **~15 GiB peak** |
+
+Three questions it answers: does it reach the same substantive result, is it much faster,
+and is the memory stress gone. On the first — do **not** expect identical text. The server
+samples, and fp32 reassociation can move a logit past a tie. Compare on substance: does it
+still find the `(t + m*N) >> 64` undefined behaviour, the single-limb Montgomery failure
+for 256/384-bit curves, and the `__umul64hi` correction?
 
 ```bash
-cat runs/resident40/progress.json
-python tools/kv_cache_report.py runs/resident40 --label "resident 40" \
-    --prompt-tokens 295 --token-log runs/resident40/tokens.jsonl
+cat runs/final-validation/progress.json
+diff <(fold -w100 runs/polymath/output.txt) <(fold -w100 runs/final-validation/output.txt)
 ```
 
 ## Branch in flight: `mla-latent-cache`
@@ -192,8 +200,16 @@ inference** (45 MB/s on the random reads this workload needs).
 3. **Open WebUI** untested end-to-end; needs its client timeout raised past the usual
    30–120 s default before it can work at 34 s/token.
 4. **Coding agents are impractical** — a 1k–10k-token task is 9–94 hours.
-5. **More pinned memory** is the clearest remaining speedup: 32 GiB covers ~30% of the
-   105.7 GiB dense working set. ~40 GiB should reach ~31 s/token.
+5. ~~**More pinned memory** is the clearest remaining speedup: 32 GiB covers ~30% of the
+   105.7 GiB dense working set. ~40 GiB should reach ~31 s/token.~~ **WRONG — measured
+   2026-08-10.** More pinning is monotonically *slower* across a 5× sweep: 40 GiB gives
+   69.0 s/token, 8 GiB gives 32.4. Fill-and-pin takes unified memory permanently from the
+   OS page cache, which is what actually serves the 105.7 GiB working set, and the app
+   cache holds only what it loaded first rather than what is being used. See
+   `docs/kv-cache/sweep/RESULTS.md`. `tests/test_resident_cache.py` predicts the opposite
+   because its model has no term for physical memory limits or page-cache displacement.
+   **The remaining lever is reading fewer bytes, not caching them better** — per-token
+   cost is 95.6 GiB ÷ achievable bandwidth, and the floor is ~32 s/token.
 6. **AMD Strix Halo box** — its value is the 96 GB unified VRAM (potential ~3x), not the
    disk (~10%). Gated on freeing ~800 GB and a hard ROCm-PyTorch-on-Windows problem.
    First experiment: prove ~89 GiB can actually be held in the GPU carve-out with only
