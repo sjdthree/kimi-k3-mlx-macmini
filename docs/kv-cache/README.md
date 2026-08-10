@@ -37,25 +37,29 @@ audit, ~339 tokens).
 Server: `python -m air_llm.serve --resident-gb 32 --port 8080`, PID 98807.
 Machine: Mac16,11, 64 GiB unified memory.
 
-Captured at token 2032 of 2500 (state: generating). Regenerate with:
+**Final.** Completed 2026-08-09T12:50:44 with `finish_reason=stop` — the model ended its
+answer at 2,197 tokens rather than reaching the 2,500 cap. No resumes. Prompt measured at
+**295 tokens** (an earlier estimate of 339 was wrong; the cache figures use 295).
+Regenerate with:
 
 ```bash
 python tools/kv_cache_report.py runs/polymath --label BEFORE \
-    --json docs/kv-cache/baseline-master.json
+    --prompt-tokens 295 --json docs/kv-cache/baseline-master.json
 ```
 
 | metric | value |
 |---|---:|
-| tokens generated | 2,032 |
-| final context (incl. prompt) | 2,371 |
+| tokens generated | 2,197 |
+| final context (incl. prompt) | 2,492 |
+| total elapsed | 2 d 3 h 02 m |
 | time to first token | 669 s |
-| mean s/token | 84.3 |
-| first-decile s/token | 57.79 |
-| last-decile s/token | 90.62 |
-| **degradation (last/first)** | **1.568×** |
-| slope, s/tok per 1k ctx (overall) | +16.10 |
-| slope, first third | **+53.38** |
-| slope, last third | **−7.86** |
+| mean s/token | 83.6 |
+| first-decile s/token | 57.94 |
+| last-decile s/token | 80.00 |
+| **degradation (last/first)** | **1.381×** |
+| slope, s/tok per 1k ctx (overall) | +11.23 |
+| slope, first third | **+52.36** |
+| slope, last third | **−25.52** |
 
 System state at capture (`baseline-system.txt`):
 
@@ -109,6 +113,37 @@ KV cache.
 
 Both mechanisms predict the observed curve. The A/B is what discriminates them, which is
 the reason to run it rather than reason further.
+
+### The completed run tilts toward the confound
+
+The last 160 tokens changed the picture, and not in favour of the KV cache. Instantaneous
+s/token over the tail:
+
+| token | 1960 | 1980 | 2000 | 2020 | 2040 | 2060 | 2100 | 2140 | 2180 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| s/token | 95.1 | 93.4 | 97.6 | **109.2** | **71.3** | 75.5 | 77.2 | 77.1 | 78.3 |
+
+It peaks at 109.2 and then drops ~30% to a stable 71–78 for the rest of the run — **while
+the KV cache is at its largest it has ever been**. A cache-pressure mechanism cannot
+produce that. The last tokens should be the slowest; they are the fastest of the entire
+second half.
+
+The transition also lines up with the content. The final ~500 bytes of `output.txt` is the
+`## Summary` section — a markdown table of three rows. That is exactly the repetitive,
+low-diversity text that would route to a narrow, repeated set of experts and cut the
+per-token disk reads.
+
+This does not prove the routing hypothesis, and there are dumber explanations (something
+else on the machine released memory; ordinary variance). But it is direct evidence that
+**something other than cache size dominates the per-token cost**, and it should temper any
+expectation that the latent cache alone recovers the 34 s/token figure.
+
+**Change to the A/B procedure because of this.** Timing alone cannot separate the two
+mechanisms — measure the routing directly. `TokenRecord` already carries `experts_loaded`
+and `bytes_read`, and `KimiK3Model.generate` writes them per token via `log_path`, but the
+server path (`engine.py::_run`) does not. Wire that through and capture a per-token log on
+BOTH runs; then correlate s/token against `experts_loaded` and settle it with data instead
+of inference.
 
 ---
 

@@ -1,0 +1,18 @@
+{
+  "state": "done",
+  "prompt_file": "prompts/04_polymath_multi_expert.md",
+  "tokens_generated_total": 2197,
+  "tokens_this_attempt": 2197,
+  "target_tokens": 2500,
+  "percent": 87.88,
+  "elapsed_s": 183718.6,
+  "elapsed_human": "2 days, 3:01:58",
+  "seconds_per_token": 83.6,
+  "ttft_s": 668.8,
+  "eta_human": "7:02:17",
+  "eta_finish": "2026-08-09T19:53:01",
+  "resumes": 0,
+  "started": "2026-08-07T09:48:45",
+  "updated": "2026-08-09T12:50:44",
+  "output_bytes": 7173
+}
