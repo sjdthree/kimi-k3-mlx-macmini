@@ -38,10 +38,12 @@ tokens without threading cancellation through 93 layer calls.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import AsyncIterator
 
 log = logging.getLogger("air_llm.server")
@@ -84,7 +86,7 @@ class Cancelled(Exception):
 class Engine:
     def __init__(self, cfg, src, tokenizer, *, max_memory_gb: float = 48.0,
                  queue_size: int = 2, max_output_tokens: int = 4096,
-                 max_input_tokens: int = 8192):
+                 max_input_tokens: int = 8192, token_log=None):
         from ..models.kimi_k3.model import KimiK3Model
         self.cfg = cfg
         self.src = src
@@ -92,6 +94,12 @@ class Engine:
         self.model = KimiK3Model(cfg, src, max_memory_gb=max_memory_gb)
         self.max_output_tokens = max_output_tokens
         self.max_input_tokens = max_input_tokens
+        # Per-token diagnostics. KimiK3Model.generate already writes these via its
+        # `log_path`, but the CLI path is not the one long runs go through -- the server
+        # is. Without this, a slow run leaves only wall-clock timings, which cannot
+        # separate "the KV cache grew" from "routing hit more experts". See
+        # docs/kv-cache/README.md.
+        self.token_log = Path(token_log) if token_log else None
 
         self._lock = asyncio.Semaphore(1)
         self._queue_slots = asyncio.Semaphore(max(1, queue_size))
@@ -120,6 +128,40 @@ class Engine:
     def warm(self) -> bool:
         """True once at least one generation has populated the resident cache."""
         return self._warm
+
+    def _log_token(self, index: int, ids: list[int], token_id: int,
+                   elapsed: float, state) -> None:
+        """Append one JSON record per generated token.
+
+        The three counters are the point. `experts_loaded` and `expert_bytes` move with
+        ROUTING; `cache_bytes` and `context` move with CONTEXT LENGTH. A slowdown that
+        tracks the first is not a KV-cache problem, whatever the wall clock says -- which
+        is exactly the ambiguity the 2026-08-07 baseline run could not resolve.
+
+        Opened in append mode and flushed per token so an interrupted run keeps every
+        record it produced, matching how run_long_job.py treats its own output.
+        """
+        try:
+            mem = state.memory_report()
+            rec = {
+                "index": index,
+                "token_id": token_id,
+                "step_tokens": len(ids),          # prompt length on step 0, else 1
+                "context": state.token_position,
+                "elapsed_s": round(elapsed, 3),
+                "bytes_read": self.src.bytes_read,
+                "expert_bytes": self.src.expert_bytes,
+                "experts_loaded": self.src.experts_loaded,
+                "cache_bytes": mem["total"],
+                "mla_cache_bytes": mem["mla_cache"],
+                "kda_state_bytes": mem["kda_recurrent"] + mem["kda_conv"],
+            }
+            self.token_log.parent.mkdir(parents=True, exist_ok=True)
+            with self.token_log.open("a") as f:
+                f.write(json.dumps(rec) + "\n")
+        except Exception:
+            # Diagnostics must never be able to kill a generation that is hours in.
+            log.warning("token log write failed", exc_info=True)
 
     def stats(self) -> dict:
         cs = self.src.cache_stats()
@@ -181,6 +223,9 @@ class Engine:
 
         def step(ids: list[int]):
             """One forward pass + one sampled token. Runs off the event loop."""
+            if self.token_log is not None:
+                self.src.reset_counters()
+                t0 = time.time()
             h = self.model.forward_token(self.model.embed(ids), state)
             mx.eval(h)
             lg, _ = full_logits(self.model, h[:, -1, :])
@@ -189,6 +234,8 @@ class Engine:
                        n_logprobs=p.top_logprobs if p.logprobs else 0,
                        logit_bias=p.logit_bias)
             state.advance(len(ids))
+            if self.token_log is not None:
+                self._log_token(len(produced), ids, c.token_id, time.time() - t0, state)
             return c
 
         n_max = min(p.max_tokens, self.max_output_tokens)
