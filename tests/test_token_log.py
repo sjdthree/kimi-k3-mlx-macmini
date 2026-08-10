@@ -14,7 +14,8 @@ file existing:
     T3  the ROUTING counters and the CONTEXT counters are independent fields, both
         non-trivial, so a slowdown can be attributed to one or the other
     T4  MLA cache bytes track context exactly (the latent-cache rate, not master's)
-    T5  a broken log destination cannot kill a generation
+    T5  peak_bytes is recorded, so a successful run reports its own headroom
+    T6  a broken log destination cannot kill a generation
 
 Runs on the synthetic model; no checkpoint access.
 
@@ -134,11 +135,14 @@ def main():
         check("MLA cache grows at the latent rate", all(d == per_tok for d in deltas),
               f"{deltas} vs {per_tok} B/token expected "
               f"({n_mla} MLA layer(s) x {cfg.kv_lora_rank}+{cfg.qk_rope_head_dim} fp32)")
+        check("peak_bytes recorded and plausible",
+              all(r.get("peak_bytes", 0) > 0 for r in recs),
+              f"{[r.get('peak_bytes', 0) // 2**20 for r in recs]} MiB")
         check("KDA state is flat (fixed-size recurrence)",
               len({r["kda_state_bytes"] for r in recs}) == 1,
               f"{sorted({r['kda_state_bytes'] for r in recs})}")
 
-    # T5 -- diagnostics must never take down a generation that is hours in.
+    # T6 -- diagnostics must never take down a generation that is hours in.
     bad = Path("/dev/null/cannot/exist/tokens.jsonl")
     try:
         items = generate(bad)

@@ -153,6 +153,7 @@ class Engine:
         record it produced, matching how run_long_job.py treats its own output.
         """
         try:
+            from ..models.kimi_k3.model import _peak_memory
             mem = state.memory_report()
             cs = self.src.cache_stats()
             ph, pm = self._prev_cache
@@ -174,6 +175,11 @@ class Engine:
                 "cache_bytes": mem["total"],
                 "mla_cache_bytes": mem["mla_cache"],
                 "kda_state_bytes": mem["kda_recurrent"] + mem["kda_conv"],
+                # Peak allocator high-water mark. Without this the only way to learn what
+                # a long prefill actually costs is to trip the ceiling and read the
+                # MemoryError -- which is how the 2026-08-10 long-prompt attempts were
+                # diagnosed, badly. A successful run should report its own headroom.
+                "peak_bytes": _peak_memory(),
             }
             self.token_log.parent.mkdir(parents=True, exist_ok=True)
             with self.token_log.open("a") as f:
