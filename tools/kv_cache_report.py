@@ -260,10 +260,15 @@ def render(a: dict, label: str, base: dict | None) -> str:
         row("**slope, s/tok per 1k ctx**", "slope_s_per_token_per_1k_ctx")
         row("slope, first third", "slope_first_third_per_1k_ctx")
         row("slope, last third", "slope_last_third_per_1k_ctx")
-        L.append(f"| MLA cache at final context | "
-                 f"{fmt_gib(base['mla_cache_bytes_at_end']['expanded'])} | "
-                 f"{fmt_gib(a['mla_cache_bytes_at_end']['latent'])} | "
-                 f"{base['mla_cache_bytes_at_end']['expanded'] / max(a['mla_cache_bytes_at_end']['latent'], 1):.1f}× ✅ |")
+        # Both sides at the AFTER-run's context, or this compares master's cache at its
+        # own (longer) final context against the branch's at a shorter one and reports a
+        # ratio that is really just the length difference. The honest number is the
+        # per-token ratio, which is constant: 2,949,120 / 55,296 = 53.3x.
+        ctx = a["final_context"]
+        exp_at_ctx = ctx * EXPANDED_B_PER_TOK
+        lat_at_ctx = ctx * LATENT_B_PER_TOK
+        L.append(f"| MLA cache at {ctx:,}-token context | {fmt_gib(exp_at_ctx)} | "
+                 f"{fmt_gib(lat_at_ctx)} | {exp_at_ctx / lat_at_ctx:.1f}× ✅ |")
     else:
         L.append(W("metric", "value"))
         L.append("|" + "-" * 36 + "|" + "-" * 20 + "|")
