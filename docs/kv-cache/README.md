@@ -409,6 +409,52 @@ now is O(1) in context:
    position, so the mask is all zeros — an allocation and a 96 × Tk add per MLA layer per
    token, for nothing. Marginal (~5.7M element-adds/token at 2.5k), but free.
 
+## Long-context test — `runs/longctx-2k`
+
+Launched 2026-08-10T03:37:49. Prompt `prompts/05_longctx_cuda_audit.md`, **1,955 tokens**
+(a 256-bit Montgomery CUDA library with planted defects, same three-domain audit shape as
+prompt 04 so the task is comparable). 150 tokens generated, decode context ~1,960→2,110.
+
+**Why a long PROMPT rather than a long generation.** Context reached by prefill and
+context reached by decoding produce the same KV cache size, so decode s/token is
+comparable at matched context — but prefill gets there in 72 minutes instead of two days.
+
+### The controlled measurement (primary)
+
+Same server, same session, same day — only the context differs:
+
+| | context | branch s/token |
+|---|---:|---:|
+| `polymath-latent-300` | 595 | **46.7** |
+| `longctx-2k` | ~2,035 | _pending_ |
+
+A flat result across a 3.4× context increase is the claim. This is the clean comparison
+because nothing but context changes.
+
+### The cross-run reference (secondary, confounded)
+
+Master at the same context, from the baseline curve (generated tokens 1,665–1,820):
+
+| | value |
+|---|---:|
+| mean s/token | **90.6** |
+| range | 84.5 – 96.1 |
+| MLA cache @ctx 2,035 | **5.59 GiB** |
+| branch MLA cache @ctx 2,035 | **0.105 GiB** |
+
+**State the confound.** Master reached that context by generating for ~40 hours, so its
+90.6 s/token includes whatever the machine had accumulated by then — it was 24.95 GiB into
+swap. The branch reaches the same context in 72 minutes on a 6-hour-old server. Part of
+any gap is system drift, not cache size. That is exactly why the within-branch comparison
+above is the primary measurement and this one is a reference.
+
+### Prediction
+
+If the latent cache is what flattened the 300-token curve, the branch should hold **~46–48
+s/token at context 2,035**, statistically indistinguishable from its own 46.7 at context
+595. A rise toward 60+ would mean something else scales with context that 300 tokens was
+too short to expose.
+
 ## Still open
 
 - **Real-weight quantisation quality.** `tests/test_mla_quant.py` gates Q1/Q2/Q6 run on
