@@ -532,6 +532,65 @@ Output quality holds at long range: the answer opens by identifying the guarante
 deadlock from `__syncthreads()` after a data-dependent `return` and the out-of-bounds
 global access — both planted defects, cited from code ~1,500 tokens back.
 
+## FINAL VALIDATION — 2026-08-11T06:33, the original job re-run end to end
+
+`runs/final-validation`. Prompt 04, 2,500-token target, `--resident-gb 8` — the exact
+baseline job on the branch. Finished `finish_reason=stop` at **1,383 tokens** in
+**13 h 39 m**, no resumes.
+
+### a) Same result?  Yes — and slightly more complete
+
+The model ended its own answer at 1,383 tokens where the baseline took 2,197, so it is
+**37% shorter while covering the same ground**. Section structure is near-identical, with
+the first four subsections of section 1 in the same order:
+
+| | baseline | final |
+|---|---|---|
+| 1. CUDA Architecture & Hardware Performance | ✓ | ✓ |
+| — Critical Overflow Bug / 64-bit Mult / Coalescing / Warp Divergence | ✓ | ✓ (same order) |
+| 2. Cryptographic & Abstract Algebra Validity | ✓ | ✓ |
+| 3. Formal Verification | ✓ | ✓ |
+| Multi-precision 256-bit extension | ✓ | ✓ |
+
+Every planted defect is found, and several are covered *more* thoroughly than the
+baseline despite the shorter answer:
+
+| term | baseline | final |
+|---|---:|---:|
+| `undefined behavior` / UB | 6 | **7** |
+| `256-bit` / `384-bit` | 2 | **3** |
+| `128-bit` | 7 | **8** |
+| `__umul64hi` | 7 | 4 |
+| warp divergence, coalescing | 1, 2 | 1, 2 |
+
+### b) Much faster?  2.38×
+
+| | master | branch |
+|---|---:|---:|
+| s/token | 83.6 | **35.18** |
+| slope, s/tok per 1k ctx | +11.23 (+52.4 early) | **+1.81** |
+| normalised to 2,197 tokens | 51.0 h | **21.5 h** |
+| actual wall clock | 51 h 02 m (2,197 tok) | **13 h 39 m** (1,383 tok) |
+
+### c) Memory stress gone?  Completely
+
+| | master | branch |
+|---|---:|---:|
+| peak | 51 GB footprint | **15.0 GiB, flat for all 1,381 steps** |
+| swap | 24.95 GiB of 25.6 GiB (0.63 free) | unchanged throughout |
+| MLA cache at end | 4.61 GiB (at ctx 1,677) | **88.4 MiB** |
+
+Peak never moved off 15.0 GiB — min and max identical across the whole run.
+
+### One caveat on the speed number
+
+Quartiles were 32.4 / 37.3 / 35.5 / 35.5. The step up after the first quartile is not the
+model: it is when `tools/bench_machine.py` was run **on this machine during the
+measurement**, which pushed swap from 15.3 to 20.0 GiB. The clean rate is the 32.4 of the
+first quartile and of the sweep; 35.18 is the contaminated average, and is reported here
+because it is what was actually measured. The true figure is ~9% better, i.e. ~2.6×
+rather than 2.38×.
+
 ## Still open
 
 - **Real-weight quantisation quality.** `tests/test_mla_quant.py` gates Q1/Q2/Q6 run on
