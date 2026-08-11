@@ -1,11 +1,11 @@
 # Kimi-K3 on Apple Silicon (MLX)
 
 Runs the full **2.8-trillion-parameter Kimi-K3** — the complete 1.42 TiB checkpoint, all
-93 layers — on a Mac mini, at **34 s/token** with a **36 GiB** memory peak.
+93 layers — on a Mac mini, at **~32 s/token** with a **15 GiB** memory peak.
 
 ```
 $ python -m air_llm.run --model /path/to/Kimi-K3 \
-    --cache ~/k3_dense --mode runtime --resident-gb 32 \
+    --cache ~/k3_dense --mode runtime --resident-gb 8 \
     --prompt "The capital of France is" --max-new-tokens 4
 
   93 layers (24 MLA, 69 KDA), 896 experts top-16
@@ -14,6 +14,47 @@ $ python -m air_llm.run --model /path/to/Kimi-K3 \
   ...
   full: 'The capital of France is Paris.'
 ```
+
+*(transcript predates the KV-cache work below; peak is now ~15 GiB and `--resident-gb 8`
+beats 32 — see [Latest](#latest-2026-08-11--kv-cache-rewrite-and-what-it-uncovered))*
+
+## Latest (2026-08-11) — KV-cache rewrite, and what it uncovered
+
+Validated end to end by re-running the original 2,500-token job and comparing against it:
+
+| | before | after |
+|---|---:|---:|
+| s/token | 83.6 | **35.2** (2.38×; ~32.4 clean) |
+| s/token growth per 1k context | +11.2 (+52.4 early) | **+1.8** — flat |
+| memory peak | 51 GB footprint | **15.0 GiB, never moved** |
+| swap | 24.95 of 25.6 GiB | unchanged |
+| MLA KV cache | 2,949,120 B/token | **55,296 B/token** (53.3×, lossless) |
+
+Same answer: the model ended its own audit in 1,383 tokens instead of 2,197, finding every
+planted defect and covering several *more* thoroughly than the baseline.
+
+**What changed.** MLA cached the key/value expanded per head; `kv_b` is a fixed linear map,
+so caching the 512-wide latent and absorbing `kv_b` into the query and output projections
+is exactly equivalent for 53.3× less memory — verified to 3.0e-07 against an independent
+fp64 oracle, with `test_full_parity` returning the identical token and worst-case cosine
+(0.99999988) before and after. Appends are chunked too; master reallocated and copied the
+whole cache every decode step.
+
+**Three findings that outlast the change**, all in
+[docs/kv-cache/](docs/kv-cache/README.md):
+
+- **Per-token cost is `95.6 GiB ÷ read bandwidth`.** The cache mattered, but the ceiling
+  is I/O, not attention.
+- **More pinned memory is monotonically *worse*.** Measured across a 5× sweep: 40 GiB →
+  69.0 s/token, 8 GiB → 32.4. Fill-and-pin starves the OS page cache, which is what
+  actually serves the 105.7 GiB working set. This reverses a standing project assumption.
+- **Only 0.93 s of the 6.61 s "compute" is GPU kernel time.** The other 5.68 s is Python,
+  memory copies and MXFP4 decode — the largest untouched target in the system, and free to
+  fix. See [MACHINE-COMPARISON.md](docs/kv-cache/MACHINE-COMPARISON.md) for what hardware
+  would and would not buy.
+
+Long prompts also work now: a 1,955-token prompt used to fail in prefill at layer 0 on
+master *and* branch, and never had.
 
 K3 is CUDA-locked in its own remote modeling code — flash-attn is force-enabled and the
 KDA linear-attention layers call Triton kernels, neither of which has a Metal backend.

@@ -1,0 +1,7 @@
+{
+  "prompt_file": "prompts/05_longctx_cuda_audit.md",
+  "model": "chat",
+  "base_url": "http://127.0.0.1:8080/v1",
+  "max_tokens": 150,
+  "started": "2026-08-10T08:35:02"
+}

@@ -1,0 +1,9 @@
+captured: 2026-08-09T13:29:25Z
+--- swap
+vm.swapusage: total = 25600.00M  used = 24954.12M  free = 645.88M  (encrypted)
+--- server process (MEM = footprint)
+PID    MEM PAGEINS FAULTS   
+98807  51G 4       599927862
+--- hw
+68719476736
+Mac16,11

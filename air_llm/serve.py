@@ -50,7 +50,8 @@ def build_engine(a):
     tok = load_tok(a.model)
     return Engine(cfg, src, tok, max_memory_gb=a.max_memory_gb,
                   queue_size=a.queue_size, max_output_tokens=a.max_output_tokens,
-                  max_input_tokens=a.max_input_tokens)
+                  max_input_tokens=a.max_input_tokens,
+                  token_log=getattr(a, "token_log", None))
 
 
 def main(argv=None) -> int:
@@ -68,6 +69,11 @@ def main(argv=None) -> int:
                     help="requests admitted beyond the running one before 429")
     ap.add_argument("--max-output-tokens", type=int, default=256)
     ap.add_argument("--max-input-tokens", type=int, default=8192)
+    ap.add_argument("--token-log", type=Path, default=None,
+                    help="append one JSON record per generated token (elapsed, "
+                         "bytes_read, experts_loaded, cache_bytes). Needed to tell a "
+                         "context-driven slowdown from a routing-driven one; see "
+                         "docs/kv-cache/README.md.")
     ap.add_argument("--max-n", type=int, default=1)
     ap.add_argument("--default-max-tokens", type=int, default=16)
     ap.add_argument("--mock", action="store_true",

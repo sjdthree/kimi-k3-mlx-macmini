@@ -38,10 +38,12 @@ tokens without threading cancellation through 93 layer calls.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import AsyncIterator
 
 log = logging.getLogger("air_llm.server")
@@ -84,7 +86,7 @@ class Cancelled(Exception):
 class Engine:
     def __init__(self, cfg, src, tokenizer, *, max_memory_gb: float = 48.0,
                  queue_size: int = 2, max_output_tokens: int = 4096,
-                 max_input_tokens: int = 8192):
+                 max_input_tokens: int = 8192, token_log=None):
         from ..models.kimi_k3.model import KimiK3Model
         self.cfg = cfg
         self.src = src
@@ -92,6 +94,13 @@ class Engine:
         self.model = KimiK3Model(cfg, src, max_memory_gb=max_memory_gb)
         self.max_output_tokens = max_output_tokens
         self.max_input_tokens = max_input_tokens
+        # Per-token diagnostics. KimiK3Model.generate already writes these via its
+        # `log_path`, but the CLI path is not the one long runs go through -- the server
+        # is. Without this, a slow run leaves only wall-clock timings, which cannot
+        # separate "the KV cache grew" from "routing hit more experts". See
+        # docs/kv-cache/README.md.
+        self.token_log = Path(token_log) if token_log else None
+        self._prev_cache = (0, 0)     # (hits, misses), for per-token deltas
 
         self._lock = asyncio.Semaphore(1)
         self._queue_slots = asyncio.Semaphore(max(1, queue_size))
@@ -120,6 +129,64 @@ class Engine:
     def warm(self) -> bool:
         """True once at least one generation has populated the resident cache."""
         return self._warm
+
+    def _log_token(self, index: int, ids: list[int], token_id: int,
+                   elapsed: float, state) -> None:
+        """Append one JSON record per generated token.
+
+        `cache_bytes` and `context` move with CONTEXT LENGTH. The routing side needs more
+        care than it first appears:
+
+        `experts_loaded` and `expert_bytes` are STRUCTURALLY CONSTANT during decode --
+        every token routes top_k experts in each of the 92 MoE layers and loads 3
+        projections each, so the count is always 92*16*3 = 4416 and the byte total
+        follows from fixed shapes. Measured over 85 decode steps of the 2026-08-09
+        after-run: one distinct value each, while s/token varied by 28.2 s. They cannot
+        explain any variance, and logging them alone was a design error.
+
+        What actually varies is WHICH experts get routed, and therefore whether each read
+        hits the resident cache or goes to disk. That is `hits`/`misses`, so those are
+        logged as per-token deltas. A slowdown tracking `cache_misses` is a routing
+        problem; one tracking `context` is a KV-cache problem.
+
+        Opened in append mode and flushed per token so an interrupted run keeps every
+        record it produced, matching how run_long_job.py treats its own output.
+        """
+        try:
+            from ..models.kimi_k3.model import _peak_memory
+            mem = state.memory_report()
+            cs = self.src.cache_stats()
+            ph, pm = self._prev_cache
+            self._prev_cache = (cs["hits"], cs["misses"])
+            hits, misses = cs["hits"] - ph, cs["misses"] - pm
+            rec = {
+                "index": index,
+                "token_id": token_id,
+                "step_tokens": len(ids),          # prompt length on step 0, else 1
+                "context": state.token_position,
+                "elapsed_s": round(elapsed, 3),
+                # per-token deltas -- these are the ones that actually vary
+                "cache_hits": hits,
+                "cache_misses": misses,
+                "cache_hit_rate": round(hits / (hits + misses), 4) if hits + misses else 0.0,
+                "bytes_read": self.src.bytes_read,
+                "expert_bytes": self.src.expert_bytes,
+                "experts_loaded": self.src.experts_loaded,
+                "cache_bytes": mem["total"],
+                "mla_cache_bytes": mem["mla_cache"],
+                "kda_state_bytes": mem["kda_recurrent"] + mem["kda_conv"],
+                # Peak allocator high-water mark. Without this the only way to learn what
+                # a long prefill actually costs is to trip the ceiling and read the
+                # MemoryError -- which is how the 2026-08-10 long-prompt attempts were
+                # diagnosed, badly. A successful run should report its own headroom.
+                "peak_bytes": _peak_memory(),
+            }
+            self.token_log.parent.mkdir(parents=True, exist_ok=True)
+            with self.token_log.open("a") as f:
+                f.write(json.dumps(rec) + "\n")
+        except Exception:
+            # Diagnostics must never be able to kill a generation that is hours in.
+            log.warning("token log write failed", exc_info=True)
 
     def stats(self) -> dict:
         cs = self.src.cache_stats()
@@ -181,6 +248,9 @@ class Engine:
 
         def step(ids: list[int]):
             """One forward pass + one sampled token. Runs off the event loop."""
+            if self.token_log is not None:
+                self.src.reset_counters()
+                t0 = time.time()
             h = self.model.forward_token(self.model.embed(ids), state)
             mx.eval(h)
             lg, _ = full_logits(self.model, h[:, -1, :])
@@ -189,6 +259,8 @@ class Engine:
                        n_logprobs=p.top_logprobs if p.logprobs else 0,
                        logit_bias=p.logit_bias)
             state.advance(len(ids))
+            if self.token_log is not None:
+                self._log_token(len(produced), ids, c.token_id, time.time() - t0, state)
             return c
 
         n_max = min(p.max_tokens, self.max_output_tokens)

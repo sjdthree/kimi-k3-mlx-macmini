@@ -150,22 +150,21 @@ class KimiK3Model:
             layer = build_layer(c, L, self.src)
 
             ls = layer.__class__.__mro__  # noqa: F841  (kept for readability of stack)
-            from .attention_mla import MLACache
             from .layer import LayerState
-            cached = state.mla_caches.get(L)
             st = LayerState(
                 kda_state=state.kda_states.get(L),
                 kda_conv=state.kda_conv.get(L),
-                # KimiK3State stores MLA caches as plain (key, value) tuples because that
-                # is what the serialiser writes; rebuild the dataclass on the way in.
-                mla_cache=MLACache(*cached) if cached is not None else None,
+                # The MLA cache owns a growable backing buffer, so it is carried as the
+                # object itself; unpacking it to plain arrays here would defeat the
+                # chunked growth by forcing a rebuild every layer, every token.
+                mla_cache=state.mla_caches.get(L),
             )
             hidden, br, st = layer(hidden, br, state=st, diag=diag)
 
             if c.is_kda(L):
                 state.kda_states[L], state.kda_conv[L] = st.kda_state, st.kda_conv
             else:
-                state.mla_caches[L] = (st.mla_cache.key, st.mla_cache.value)
+                state.mla_caches[L] = st.mla_cache
 
             mx.eval(hidden, br)          # force completion before the layer is dropped
             if self.check_finite:
@@ -175,8 +174,10 @@ class KimiK3Model:
                     for i, cv in enumerate(st.kda_conv or ()):
                         self._assert_finite(cv, f"kda_conv{i}@L{L}")
                 elif st.mla_cache is not None:
-                    self._assert_finite(st.mla_cache.key, f"mla_key@L{L}")
-                    self._assert_finite(st.mla_cache.value, f"mla_value@L{L}")
+                    # only the valid prefix -- the buffer's unused tail is zeroed slack
+                    lat, rot = st.mla_cache.view()
+                    self._assert_finite(lat, f"mla_latent@L{L}")
+                    self._assert_finite(rot, f"mla_rot@L{L}")
                 if diag is not None and diag.router_weights is not None:
                     self._assert_finite(diag.router_weights, f"router_w@L{L}")
             del layer                    # spec section 6: no retained references

@@ -53,6 +53,14 @@ class KDAAttention:
             "longer holds for this checkpoint; re-derive before trusting any output.")
         self.A_exp = mx.exp(A[:H]).reshape(H, 1)          # exp(A_log), per value head
 
+    # How many recurrence steps to build before forcing evaluation. MLX is lazy, so
+    # without this the whole T-step chain stays live as an unevaluated graph holding one
+    # [B,H,D,D] state per step -- 6 MiB at 96 heads x 128 x 128 fp32. That is 1.7 GiB for
+    # a 291-token prompt and 11.5 GiB for a 1,955-token one, which is how the first
+    # long-prompt run blew the 48 GiB ceiling at layer 0 (a KDA layer). Decode is T=1 and
+    # never reaches the check, so this costs nothing there.
+    EVAL_EVERY = 64
+
     # ------------------------------------------------------------------ recurrence
     @staticmethod
     def _recurrent(q, k, v, g, beta, scale, state):
@@ -74,6 +82,11 @@ class KDAAttention:
             upd = mx.expand_dims(mx.expand_dims(b_i, -1) * k_i, -1) * mx.expand_dims(v_i - kS, -2)
             S = S + upd
             outs.append(mx.sum(mx.expand_dims(q_i, -1) * S, axis=-2))   # [B,H,V]
+
+            # Forcing the chain here lets MLX release every graph node behind it. Purely
+            # a scheduling change -- the arithmetic and its results are untouched.
+            if (i + 1) % KDAAttention.EVAL_EVERY == 0:
+                mx.eval(S, *outs[-KDAAttention.EVAL_EVERY:])
         return mx.stack(outs, axis=1), S
 
     # ---------------------------------------------------------------------- forward

@@ -1,0 +1,11 @@
+ # Multi-Domain Audit: CUDA Montgomery Arithmetic Backend
+
+## Executive Summary
+
+This code contains **critical defects in all three domains**. The most severe are: (1) a **guaranteed deadlock** in `ScalarMulKernel` from `__syncthreads()` after a data-dependent `return`; (2) an **out-of-bounds global memory read** from the missing bounds guard; (3) a **mathematically incorrect Montgomery reduction** that produces wrong results for a non-trivial fraction of inputs; and (4) **multiple timing side-channels** that leak secret scalar bits. Several of these are independently fatal to the system's correctness or security.
+
+---
+
+## Domain 1: CUDA Architecture and Hardware Correctness
+
+### 
