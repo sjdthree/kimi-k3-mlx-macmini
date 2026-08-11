@@ -17,7 +17,12 @@ measures directly, with random weights at the real model dimensions:
     1. unified memory bandwidth   -- how fast the resident dense weights stream
     2. compute throughput         -- the actual matmul shapes, one layer, x93
 
-Nothing here touches the checkpoint. Run it on both machines and compare.
+Nothing here touches the checkpoint. Run it on both machines and compare. Results so far
+are in docs/kv-cache/MACHINE-COMPARISON.md.
+
+Do NOT run this on a machine that is mid-measurement: it allocates several GiB and uses
+the GPU. Doing exactly that during the 2026-08-11 validation run pushed swap from 15.3 to
+20.0 GiB and the run from 32.4 to 35.4 s/token.
 
     python tools/bench_machine.py
 """
