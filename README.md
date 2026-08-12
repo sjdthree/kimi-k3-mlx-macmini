@@ -61,6 +61,74 @@ KDA linear-attention layers call Triton kernels, neither of which has a Metal ba
 This is a from-scratch MLX implementation of the architecture, validated against a
 torch/CPU reference built from the shipped code.
 
+## Running it on this machine
+
+The checkpoint lives at `/Volumes/USB4_2TBB/Kimi-K3` (1.4 TiB) with the dense tier staged
+on the internal SSD at `~/k3_dense` (106 GiB). One line, using a prompt from `prompts/`:
+
+```bash
+conda activate airllm && cd ~/kimi-k3-mlx
+
+python -m air_llm.run --model /Volumes/USB4_2TBB/Kimi-K3 \
+    --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
+    --mode runtime --resident-gb 8 --max-memory-gb 58 \
+    --prompt-file prompts/04_polymath_multi_expert.md --max-new-tokens 200
+```
+
+That is ~10 min of prefill (a 291-token prompt) then ~32 s per generated token, so 200
+tokens is about **2 hours**. Drop `--max-new-tokens` to 4 for a ~12-minute smoke test.
+
+**The flags that matter, and why:**
+
+| flag | value | why |
+|---|---|---|
+| `--manifest` | `manifest_local.jsonl.gz` | gitignored — it embeds an absolute path. Rebuild in ~8 s: `python tools/k3_manifest.py build --ckpt /Volumes/USB4_2TBB/Kimi-K3 --out manifest_local.jsonl.gz` |
+| `--cache` | `~/k3_dense` | dense tier on the internal SSD; experts stream from the external drive |
+| `--mode` | `runtime` | bf16. `validation` is fp32 and only for parity testing |
+| `--resident-gb` | **8** | *lower is faster* — see [Performance notes](#performance-notes). 40 GiB is 2.1× slower than 8 |
+| `--max-memory-gb` | **58** | prompts beyond ~1k tokens need this; 48 fails in prefill at layer 0 |
+
+Prompts available: `01_delta_state_tracking`, `02_deep_layer_precision`,
+`03_order_agnostic_causal`, `04_polymath_multi_expert` (the benchmark prompt used
+throughout `docs/kv-cache/`), `05_longctx_cuda_audit` (1,955 tokens, long-context test).
+
+### Long runs — use the server
+
+For anything over a few hundred tokens, run the server once and drive it with the job
+runner: it survives client hiccups, fsyncs every token, writes `progress.json` with a live
+ETA, and can resume from a token count instead of re-prefilling.
+
+```bash
+export AIR_LLM_API_KEYS=sk-k3
+nohup python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
+    --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
+    --mode runtime --resident-gb 8 --max-memory-gb 58 --port 8080 \
+    --max-output-tokens 3000 --token-log runs/myrun/tokens.jsonl \
+    > /tmp/serve.log 2>&1 &
+
+curl -sf localhost:8080/readyz        # wait for {"status":"ready"}
+
+nohup caffeinate -is python tools/run_long_job.py \
+    --prompt-file prompts/04_polymath_multi_expert.md \
+    --out runs/myrun --max-tokens 2500 > /tmp/job.log 2>&1 &
+
+cat runs/myrun/progress.json          # percent, s/token, ETA
+```
+
+`--token-log` writes one JSON record per token (elapsed, bytes read, experts loaded, cache
+hits/misses, peak memory) — that is what every measurement in `docs/kv-cache/` is built
+from.
+
+**Stopping cleanly matters.** `pkill` sends SIGTERM, uvicorn closes the listening socket,
+and the process can then hang in an uninterruptible read off the USB4 volume and never
+exit — freeing the port while still consuming disk bandwidth. A stale server competing this
+way invalidated a measurement mid-project. Always verify:
+
+```bash
+pkill -f air_llm.serve; sleep 10; pkill -9 -f air_llm.serve
+pgrep -f air_llm.serve || echo "clean"
+```
+
 ## Docs
 
 | | |
@@ -148,22 +216,53 @@ should prefer `stream=true`.
 
 ## Performance notes
 
-~96% of a token is I/O; compute is ~2 s. Storage dominates:
+Per-token cost is one line, and every tuning decision follows from it:
+
+```
+s/token  =  95.6 GiB  ÷  achievable read bandwidth  +  ~6.6 s compute & overhead
+```
+
+`bytes_read` is *identical* on every decode step — 95.57 GiB, of which 71.52 GiB is dense
+weights (the same bytes every token) and 24.06 GiB is expert projections drawn from a
+~1.3 TiB pool. Storage tiering is therefore what moved the number historically:
 
 | | s/token |
 |---|---:|
 | NAS over SMB | ~600 (experts alone) |
 | external USB4 NVMe | 54 |
 | + dense on internal SSD | 44 |
-| + 32 GiB pinned in RAM | **34** |
+| + latent KV cache (2026-08) | **32** |
 
-Two counter-intuitive results worth knowing before optimizing:
+Three counter-intuitive results, all measured:
+
+- **More pinned memory is *worse*.** A 5-point sweep, only `--resident-gb` moving:
+
+  | resident | s/token | hit rate | throughput |
+  |---:|---:|---:|---:|
+  | 8 GiB | **32.4** | 0.098 | **3.70 GiB/s** |
+  | 16 GiB | 32.8 | 0.191 | 3.40 GiB/s |
+  | 24 GiB | 33.2 | 0.237 | 3.12 GiB/s |
+  | 32 GiB | 42.4 | 0.345 | 2.25 GiB/s |
+  | 40 GiB | 69.0 | 0.426 | 1.27 GiB/s |
+
+  Monotonic: higher hit rate, worse throughput, every step. Fill-and-pin takes unified
+  memory permanently from the OS page cache, which is what actually serves the 105.7 GiB
+  working set — and the app cache holds only what it loaded *first*, while the page cache
+  holds what is being *used*. A miss from page cache beats a hit from swap. This reverses
+  an earlier assumption in this project; `tests/test_resident_cache.py` still predicts the
+  opposite because its model has no term for physical memory limits.
 
 - **LRU caching is pathological here.** A token walks layers 0→92 and the next token
   repeats the walk, so LRU evicts precisely what it needs next — a 24 GiB LRU cache
   measured a **0% hit rate**. `--resident-gb` uses fill-and-pin instead.
-- **mmap is 9× slower than `read()`** on cold data (389 vs 3551 MB/s); page faults
-  defeat readahead.
+
+- **mmap is 9× slower than `read()`** on cold data (389 vs 3551 MB/s); page faults defeat
+  readahead.
+
+**Only 0.93 s of the 6.6 s "compute" is GPU kernel time** — the other 5.68 s is Python,
+memory copies and MXFP4 decode. So a faster GPU buys far less than it looks like it should;
+see [MACHINE-COMPARISON.md](docs/kv-cache/MACHINE-COMPARISON.md), which ranks the upgrades
+(RAM → NVMe → GPU) and shows what a 128 GiB M5 would actually do.
 
 ## Checkpoint findings
 
