@@ -80,7 +80,7 @@ curl $OPENAI_BASE_URL/chat/completions \
 from openai import OpenAI
 
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="sk-your-key",
-                timeout=1800.0)          # required: ~34 s/token
+                timeout=1800.0)          # required: ~32 s/token
 
 for chunk in client.chat.completions.create(
         model="chat",
@@ -207,7 +207,7 @@ to start with no keys and no explicit opt-out.
 export AIR_LLM_API_KEYS=sk-your-key
 python -m air_llm.serve \
   --model /path/to/Kimi-K3 --manifest manifest.jsonl.gz \
-  --cache ~/k3_dense --mode runtime --resident-gb 32 \
+  --cache ~/k3_dense --mode runtime --resident-gb 8 \
   --port 8000 --max-output-tokens 256
 ```
 

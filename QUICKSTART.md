@@ -71,23 +71,40 @@ python tools/k3_cache.py --src /path/to/Kimi-K3 --dest ~/k3_dense \
 Takes ~35 s at 3.5 GB/s. Then pass `--cache ~/k3_dense`. If your checkpoint is on an
 external drive and you have an internal SSD with 106 GiB free, this alone is ~1.25×.
 
-### Pin weights in RAM
+### Pin a *small* amount in RAM
 
 ```bash
 python -m air_llm.run --model /path/to/Kimi-K3 --cache ~/k3_dense \
-  --mode runtime --resident-gb 32 \
+  --mode runtime --resident-gb 8 \
   --prompt "The capital of France is" --max-new-tokens 16
 ```
 
-`--resident-gb` holds that many GiB of dense weights in unified memory permanently. On a
-64 GiB machine, 32 is safe (measured peak 36 GiB against the 48 GiB ceiling). Raise it if
-you have more RAM; watch the `peak` column.
+`--resident-gb` holds that many GiB of dense weights in unified memory permanently, and
+**lower is faster** — the opposite of what it looks like. Measured on a 64 GiB machine,
+changing nothing but this flag:
+
+| `--resident-gb` | s/token | cache hit rate | disk throughput |
+|---:|---:|---:|---:|
+| **8** | **32.4** | 0.098 | **3.70 GiB/s** |
+| 16 | 32.8 | 0.191 | 3.40 GiB/s |
+| 24 | 33.2 | 0.237 | 3.12 GiB/s |
+| 32 | 42.4 | 0.345 | 2.25 GiB/s |
+| 40 | 69.0 | 0.426 | 1.27 GiB/s |
+
+Monotonic: a higher hit rate and worse throughput at every step. Pinning takes unified
+memory permanently away from the OS page cache, which is what actually serves the
+105.7 GiB working set — and a miss served from page cache beats a hit served from swap.
+Start at 8 and only raise it if you measure an improvement.
+
+(Earlier versions of this guide recommended 32, from measurements taken before the KV
+cache was rewritten. The sweep above is post-rewrite and reverses that advice; the
+reasoning is in [docs/kv-cache/](docs/kv-cache/README.md).)
 
 | configuration | s/token |
 |---|---:|
 | checkpoint on external NVMe | 54 |
 | `+ --cache` (dense on internal SSD) | 44 |
-| `+ --resident-gb 32` | **34** |
+| `+ --resident-gb 8` and the latent KV cache | **32** |
 
 ---
 

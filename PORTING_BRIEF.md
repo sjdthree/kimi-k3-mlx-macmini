@@ -124,7 +124,7 @@ Deliver **correctness-first** (a slow, numerically-correct reference) before any
 
 ## Known-good reference environment (already built — use for parity baseline)
 - Repo `~/kimi-k3-mlx`: `FINDINGS.md` (full checkpoint inspection),
-  `validate_mlx.py` (AirLLM MLX path on Llama-arch models), `run_qwen3_mlx.py` (example of monkeypatching
+  `p0/validate_mlx.py` (AirLLM MLX path on Llama-arch models), `p0/run_qwen3_mlx.py` (example of monkeypatching
   AirLLM's MLX backend to add a new architecture — QK-norm, head_dim, rope_theta — reusing on-disk
   reshard; a template for the K3 patch approach).
 - Env: miniforge conda env `airllm`, native arm64 Python 3.12, `airllm 3.1.0` + `mlx` + `torch`; MLX

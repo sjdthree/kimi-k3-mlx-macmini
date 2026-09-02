@@ -1,5 +1,14 @@
 # Kimi-K3 on Apple Silicon — Final Validation Report
 
+> **Point-in-time record, 2026-08-07.** These are the numbers as measured on the date
+> below, against the §16 criteria, and they are left unedited. They have since been
+> superseded: the MLA KV-cache rewrite (2026-08-11) took the same job from 34 to ~32
+> s/token with the memory peak down from 36 GiB to 15.0 GiB, and a `--resident-gb` sweep
+> reversed this report's `32` in favour of `8`. The correctness results here — exact
+> router selection across all 92 MoE layers, worst-case cosine 0.99999988, bit-exact
+> MXFP4 — were re-verified after that work and still hold. Current numbers:
+> [README.md](README.md) and [docs/kv-cache/](docs/kv-cache/README.md).
+
 Against `apple_si_kimik3.md` §16 success criteria. Date: 2026-08-07.
 Host: Mac mini M4 Pro, 64 GiB unified, macOS. Checkpoint: 1.420 TiB, 497,220 tensors.
 

@@ -30,7 +30,7 @@ backends.
 ```bash
 export AIR_LLM_API_KEYS=sk-key
 python -m air_llm.serve --model /path/to/Kimi-K3 --manifest manifest_local.jsonl.gz \
-    --cache ~/k3_dense --mode runtime --resident-gb 32 --max-output-tokens 3000
+    --cache ~/k3_dense --mode runtime --resident-gb 8 --max-output-tokens 3000
 
 python - <<'PY'
 from openai import OpenAI
@@ -57,7 +57,7 @@ which writes every token to disk as it arrives and can resume if anything dies:
 export AIR_LLM_API_KEYS=sk-k3
 python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
     --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
-    --mode runtime --resident-gb 32 --port 8080 --max-output-tokens 3000
+    --mode runtime --resident-gb 8 --port 8080 --max-output-tokens 3000
 
 # terminal 2 -- the job
 python tools/run_long_job.py \

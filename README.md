@@ -206,7 +206,7 @@ identical greedy tokens.
 ```bash
 export AIR_LLM_API_KEYS=sk-your-key
 python -m air_llm.serve --model /path/to/Kimi-K3 --cache ~/k3_dense \
-    --mode runtime --resident-gb 32 --port 8000
+    --mode runtime --resident-gb 8 --port 8000
 ```
 
 Any OpenAI SDK works with only `base_url` + `api_key` — verified by running the official
@@ -218,7 +218,7 @@ unsupported** rather than approximated: there is no constrained decoding in this
 and no embedding model deployed, so those requests return a structured
 `unsupported_capability` error. See [docs/API.md](docs/API.md) for the full matrix.
 
-Note the backend is disk-bound at ~34 s/token, so clients need timeouts ≥ 900 s and
+Note the backend is disk-bound at ~32 s/token, so clients need timeouts ≥ 900 s and
 should prefer `stream=true`.
 
 ## Performance notes

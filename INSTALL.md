@@ -189,7 +189,7 @@ python -m air_llm.run \
   --model /path/to/Kimi-K3 \
   --cache ~/k3_dense \
   --mode runtime \
-  --resident-gb 32 \
+  --resident-gb 8 \
   --prompt "The capital of France is" \
   --max-new-tokens 16 \
   --validation-log results/run.jsonl
@@ -207,12 +207,15 @@ the conda env with an arm64 miniforge.
 Work through §1–2: port, then Spotlight, then whether the checkpoint is on network
 storage. Measure with `python tools/bench_disk.py`. A useful sanity number: the loader
 achieves ~92% of raw device throughput on dense reads, so if the drive benchmarks at
-3.4 GB/s you should see ~35–40 s/token with `--cache` and `--resident-gb 32`.
+3.4 GB/s you should see ~32–35 s/token with `--cache` and `--resident-gb 8`.
 
-**`--resident-gb` doesn't help**
-It only pays from token 2 onward — token 1 populates it. Also confirm `peak` in the
-output is actually rising; if the budget exceeds free memory the allocator will refuse
-and residency stays at 0.
+**`--resident-gb` doesn't help — or makes things worse**
+Expected above ~24 GiB. Pinning competes with the OS page cache for the same unified
+memory, and the page cache is what serves the 105.7 GiB working set; a 5-point sweep
+measured 8 GiB at 32.4 s/token and 40 GiB at 69.0, monotonically worse at every step.
+Start at 8. Below that it only pays from token 2 onward — token 1 populates it — so
+confirm `peak` is actually rising; if the budget exceeds free memory the allocator
+refuses and residency stays at 0. Full measurements: [docs/kv-cache/](docs/kv-cache/README.md).
 
 **`MemoryError: peak unified memory exceeded the configured ceiling`**
 Lower `--resident-gb`, or raise `--max-memory-gb` if you have headroom. Working set
@@ -249,7 +252,7 @@ Full reliability run (5 prompts × 16 tokens × 3 process launches, ~2.5 h):
 
 ```bash
 python tools/reliability.py --model /path/to/Kimi-K3 --cache ~/k3_dense \
-    --mode runtime --resident-gb 32 --max-new-tokens 16
+    --mode runtime --resident-gb 8 --max-new-tokens 16
 ```
 
 Results from the reference run: [VALIDATION_REPORT.md](VALIDATION_REPORT.md).
