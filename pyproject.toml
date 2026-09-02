@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kimi-k3-mlx"
+version = "0.1.0"
+description = "Kimi-K3 (2.8T MoE) inference on Apple Silicon via MLX, with per-expert disk streaming"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Steve Derezinski" }]
+keywords = ["mlx", "apple-silicon", "kimi", "moe", "llm", "inference", "mxfp4"]
+classifiers = [
+    "Environment :: GPU",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# The model itself needs only these three.
+dependencies = [
+    "mlx>=0.29",
+    "numpy>=2.0",
+    "tiktoken>=0.7",
+]
+
+[project.optional-dependencies]
+# The OpenAI-compatible /v1 server.
+server = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.6",
+    "sse-starlette>=2.0",
+    "prometheus-client>=0.20",
+]
+# The torch/CPU fp32 parity oracle (k3ref/). Not needed to run the model.
+oracle = [
+    "torch>=2.4",
+    "einops>=0.8",
+]
+# Everything the test suite touches, including the OpenAI SDK conformance run.
+dev = [
+    "kimi-k3-mlx[server,oracle]",
+    "openai>=1.30",
+]
+
+[project.scripts]
+k3-run = "air_llm.run:main"
+k3-serve = "air_llm.serve:main"
+
+[project.urls]
+Homepage = "https://github.com/sjdthree/kimi-k3-mlx-macmini"
+Documentation = "https://github.com/sjdthree/kimi-k3-mlx-macmini/blob/master/README.md"
+
+[tool.setuptools.packages.find]
+include = ["air_llm*", "k3ref*"]

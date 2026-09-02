@@ -1,0 +1,30 @@
+Kimi-K3 on Apple Silicon (MLX)
+Copyright (c) 2026 Steve Derezinski
+Licensed under the MIT License; see LICENSE.
+
+This product includes third-party material, licensed separately:
+
+1. third_party/kda_naive.py
+   `fla/ops/kda/naive.py` from flash-linear-attention
+   https://github.com/fla-org/flash-linear-attention
+   Copyright (c) 2023-2026 Songlin Yang, Yu Zhang, Zhiyuan Li
+   MIT License -- full text in third_party/LICENSE.flash-linear-attention
+   Vendored unmodified as the KDA reference kernel.
+
+2. k3ref/
+   Derived from `modeling_kimi_linear.py` as shipped in the Kimi-K3 checkpoint
+   https://huggingface.co/moonshotai/Kimi-K3
+   Copyright (c) 2026 Moonshot AI
+   Kimi K3 License -- full text in third_party/LICENSE.kimi-k3
+   k3ref reproduces the semantics of the shipped modeling code with the two
+   CUDA-only kernels replaced by pure-torch equivalents, for use as a numerical
+   parity oracle. It is a derivative work of that code.
+
+3. air_llm/
+   An independent from-scratch MLX implementation of the Kimi-K3 architecture.
+   It contains no Moonshot AI code, but was written against the published
+   architecture and validated against k3ref. The per-expert disk-streaming
+   approach follows AirLLM (MIT), https://github.com/lyogavin/airllm.
+
+Kimi-K3 model weights are distributed by Moonshot AI under the Kimi K3 License
+and are not included in this repository.

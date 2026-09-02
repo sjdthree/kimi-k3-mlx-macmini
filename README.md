@@ -61,13 +61,16 @@ KDA linear-attention layers call Triton kernels, neither of which has a Metal ba
 This is a from-scratch MLX implementation of the architecture, validated against a
 torch/CPU reference built from the shipped code.
 
-## Running it on this machine
+## A worked example
 
-The checkpoint lives at `/Volumes/USB4_2TBB/Kimi-K3` (1.4 TiB) with the dense tier staged
-on the internal SSD at `~/k3_dense` (106 GiB). One line, using a prompt from `prompts/`:
+Every number in this repo was measured on one machine: a Mac mini M4 Pro, 64 GiB unified
+memory, with the 1.4 TiB checkpoint on an external USB4 NVMe at `/Volumes/USB4_2TBB/Kimi-K3`
+and the 106 GiB dense tier staged on the internal SSD at `~/k3_dense`. Substitute your own
+paths; the flags are what matter, and they are explained below. Generic setup is in
+[Setup](#setup) and [QUICKSTART.md](QUICKSTART.md).
 
 ```bash
-conda activate airllm && cd ~/kimi-k3-mlx
+cd ~/kimi-k3-mlx
 
 python -m air_llm.run --model /Volumes/USB4_2TBB/Kimi-K3 \
     --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
@@ -133,13 +136,14 @@ pgrep -f air_llm.serve || echo "clean"
 
 | | |
 |---|---|
-| **[SESSION.md](SESSION.md)** | current state, what's running, how to resume |
 | **[QUICKSTART.md](QUICKSTART.md)** | checkout → generated token in ~5 min |
-| **[docs/API.md](docs/API.md)** | OpenAI-compatible `/v1` server: compatibility matrix, examples, ops |
 | **[INSTALL.md](INSTALL.md)** | hardware, storage, dependencies, troubleshooting |
+| **[docs/API.md](docs/API.md)** | OpenAI-compatible `/v1` server: compatibility matrix, examples, ops |
 | **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)** | results against every spec criterion |
+| **[docs/kv-cache/](docs/kv-cache/README.md)** | the KV-cache rewrite and the three findings above, with the measurements |
 | [PROGRESS.md](PROGRESS.md) | milestone-by-milestone engineering record |
 | [K3_MLX_PLAN.md](K3_MLX_PLAN.md) | the implementation plan, and where the spec was wrong |
+| [SESSION.md](SESSION.md) | the author's working-state notes from the final run |
 
 ## Status
 
@@ -166,8 +170,8 @@ implementation.
 | `k3ref/` | torch/CPU fp32 oracle — the parity reference |
 | `tools/` | manifest builder, weight staging, reliability harness, profilers, long-job runner |
 | `prompts/` | architecture-targeted prompts (KDA, AttnRes, NoPE, LatentMoE) |
-| `tests/` | 13 suites |
-| `p0/` | feasibility-spike scripts (see [P0_RESULTS.md](P0_RESULTS.md)) |
+| `tests/` | 19 suites; `python tests/run_all.py` |
+| `p0/` | feasibility-spike scripts, incl. the pre-K3 Llama/Qwen MLX validation (see [P0_RESULTS.md](P0_RESULTS.md)) |
 
 ## Setup
 
@@ -176,7 +180,8 @@ The model itself needs only `mlx`, `numpy`, and `tiktoken` — torch is required
 by the correctness oracle.
 
 ```bash
-pip install mlx numpy tiktoken
+pip install -e .            # mlx, numpy, tiktoken -- enough to run the model
+pip install -e '.[dev]'     # + server, torch oracle, and what the tests need
 
 # index the checkpoint (~8 s, 497,220 tensors)
 python tools/k3_manifest.py build --ckpt /path/to/Kimi-K3 --out manifest.jsonl.gz
@@ -279,6 +284,45 @@ getting them wrong produces silently wrong output rather than errors:
 - Attention residuals are a **softmax attention over block checkpoints**, not additive.
 - The router's `e_score_correction_bias` affects **selection only**; weights come from
   the raw sigmoid scores.
+
+## Tests
+
+```bash
+pip install -e '.[dev]'
+python tests/run_all.py
+```
+
+19 suites. Eight need no checkpoint at all — MXFP4 decode against `compressed-tensors`,
+the fused Metal matvec, the MLA latent cache, quantised latent storage, KDA prefill
+memory, an end-to-end run on a 2.7 MB synthetic model, per-token logging, and 29 OpenAI
+`/v1` conformance checks. Those are what CI runs on every push; a fresh clone reports
+**8 passed, 10 skipped, 0 failed**.
+
+The other eleven compare against the real 1.42 TiB checkpoint through `k3ref`. They skip
+themselves unless you point `K3_CKPT` at one:
+
+```bash
+K3_CKPT=/path/to/Kimi-K3 python tests/run_all.py
+K3_CKPT=/path/to/Kimi-K3 python tests/run_all.py --include-slow   # + full 93-layer parity
+```
+
+| variable | default | what |
+|---|---|---|
+| `K3_CKPT` | `/Volumes/LLMModels/Kimi-K3` | the checkpoint `k3ref` reads |
+| `K3_CACHE` | `~/k3_cache` | staged local blob + index, if present |
+| `K3_MANIFEST` | `manifest.jsonl.gz` | tensor index; rebuild with `tools/k3_manifest.py` |
+
+`test_full_parity` walks all 93 layers off disk and takes hours; `run_all.py` excludes it
+unless you pass `--include-slow`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+Third-party components are licensed separately and listed in [NOTICE](NOTICE): the
+vendored flash-linear-attention KDA reference (MIT), and `k3ref/`, which is a derivative
+of Moonshot AI's shipped `modeling_kimi_linear.py` under the
+[Kimi K3 License](third_party/LICENSE.kimi-k3). Model weights are not included here.
 
 ## Credits
 

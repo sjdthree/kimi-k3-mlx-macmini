@@ -32,6 +32,19 @@ MOE_KEYS = ("gate.weight", "gate.e_score_correction_bias",
             "shared_experts.up_proj.weight", "shared_experts.down_proj.weight")
 
 
+def _open_manifest(path):
+    """gzip.open with an actionable error; the manifest is gitignored and rebuilt."""
+    try:
+        return gzip.open(path, "rt")
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"manifest not found: {path}\n"
+            f"It is machine-specific (it embeds an absolute checkpoint path) and so is\n"
+            f"gitignored. Rebuild it in ~8 s:\n"
+            f"    python tools/k3_manifest.py build --ckpt /path/to/Kimi-K3 --out {path}"
+        ) from None
+
+
 class TensorSource:
     """Tensor access with an optional bounded resident cache.
 
@@ -55,7 +68,7 @@ class TensorSource:
                  resident_gb: float = 0.0, weight_dtype=mx.float32):
         self.recs: dict[str, dict] = {}
         self.meta: dict = {}
-        with gzip.open(manifest, "rt") as fh:
+        with _open_manifest(manifest) as fh:
             for line in fh:
                 r = json.loads(line)
                 if r.get("__meta__"):

@@ -103,10 +103,10 @@ The model has **no torch dependency**. Torch is used only by the correctness ora
 
 ```bash
 # Runtime -- everything needed to generate tokens
-pip install mlx numpy tiktoken
+pip install -e .        # mlx, numpy, tiktoken
 
 # Oracle + tests -- only if validating
-pip install torch einops compressed-tensors
+pip install -e '.[oracle]'   # torch, einops
 ```
 
 | package | needed by | why |

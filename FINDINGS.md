@@ -54,7 +54,7 @@ Env: miniforge conda env `airllm`, native **arm64 Python 3.12.13**. Installed: a
 mlx 0.32.0, mlx-lm 0.31.3, torch 2.13.0, transformers 5.12.1.
 
 - MLX runs on the Metal GPU: `mx.default_device() -> Device(gpu, 0)`.
-- Ran `validate_mlx.py` with `TinyLlama/TinyLlama-1.1B-Chat-v1.0`:
+- Ran `p0/validate_mlx.py` with `TinyLlama/TinyLlama-1.1B-Chat-v1.0`:
   - AirLLM re-sharded to per-layer `.mlx` files under the HF cache `splitted_model/`.
   - Streamed all 22 layers per token on the GPU (~16 layers/s), then produced:
     **"The capital of France is Paris."** ✅
@@ -73,7 +73,7 @@ hidden/n_heads = 5120/64 = 80, but Qwen3's real head_dim is **128** (q_proj is 8
 (3) rope_theta defaulted to 1e4, Qwen3 uses **1e6**. The README's "Qwen3-32B on Mac" example
 does NOT work with airllm 3.1.0 as shipped.
 
-**Fix:** `run_qwen3_mlx.py` — a self-contained monkeypatch (no site-packages edits) providing a
+**Fix:** `p0/run_qwen3_mlx.py` — a self-contained monkeypatch (no site-packages edits) providing a
 Qwen3-correct `Attention` (adds q_norm/k_norm RMSNorm over head_dim, applied per head before RoPE),
 `TransformerBlock`, and model-args (head_dim=128, rope_theta=1e6). Reuses the already re-sharded
 weights on disk — no re-download.
@@ -90,7 +90,7 @@ architectures (Qwen3 QK-norm, Qwen2 QKV-bias, Gemma) need a small per-arch patch
 ## Status
 - **B1 (local inspection): complete.**
 - **B2 (validate AirLLM Mac/MLX path): complete — works** (TinyLlama-1.1B).
-- **B2b (big model, Qwen3-32B ~65 GB): complete — works via `run_qwen3_mlx.py` patch.**
-- Repro (Llama-arch): `conda activate airllm && python validate_mlx.py [hf_repo_id]`
-- Repro (Qwen3-32B): `conda activate airllm && python run_qwen3_mlx.py ["prompt"] [max_new_tokens]`
+- **B2b (big model, Qwen3-32B ~65 GB): complete — works via `p0/run_qwen3_mlx.py` patch.**
+- Repro (Llama-arch): `conda activate airllm && python p0/validate_mlx.py [hf_repo_id]`
+- Repro (Qwen3-32B): `conda activate airllm && python p0/run_qwen3_mlx.py ["prompt"] [max_new_tokens]`
 - Next (optional) **A**: run K3 for real on an NVIDIA CUDA box (see requirements above).

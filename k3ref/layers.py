@@ -1,5 +1,9 @@
 """k3ref: Kimi-K3 reference implementation, torch/CPU, fp32.
 
+Derivative work of `modeling_kimi_linear.py` as shipped in the Kimi-K3 checkpoint,
+Copyright (c) 2026 Moonshot AI, used under the Kimi K3 License. The full license text
+is in third_party/LICENSE.kimi-k3; see NOTICE for the attribution trail.
+
 This is NOT a reimplementation. It is the shipped `modeling_kimi_linear.py` semantics with
 the two CUDA-only kernels replaced by their pure-torch equivalents:
   flash_attn_varlen_func -> eager_attention_forward (already in the shipped file)

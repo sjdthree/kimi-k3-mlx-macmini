@@ -15,16 +15,19 @@ Semantics established in P0-2, all pinned to upstream source:
 """
 import hashlib
 import importlib.util
+from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from k3io import load
 
-FLA_NAIVE = ("/tmp/scratch/"
-             "a6d56033-f7d2-4e9d-83d3-c502f61ec2ee/scratchpad/fla_git/fla/ops/kda/naive.py")
+# The upstream reference, vendored unmodified. This spike originally loaded it from a
+# scratch checkout of flash-linear-attention; it now points at the in-repo copy.
+FLA_NAIVE = Path(__file__).resolve().parent.parent / "third_party" / "kda_naive.py"
 
 # import upstream naive.py directly (bypasses fla/__init__, which needs triton)
-_spec = importlib.util.spec_from_file_location("kda_naive", FLA_NAIVE)
+_spec = importlib.util.spec_from_file_location("kda_naive", str(FLA_NAIVE))
 kda_naive = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kda_naive)
 

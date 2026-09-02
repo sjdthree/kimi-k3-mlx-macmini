@@ -31,6 +31,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.layer import LayerState, empty_block_residual  # noqa: E402
 from air_llm.models.kimi_k3.loader import TensorSource, build_layer  # noqa: E402
 from air_llm.models.kimi_k3.model import (  # noqa: E402
@@ -51,6 +52,7 @@ def check(label, ok, detail=""):
 
 
 def main():
+    require_checkpoint()
     ap = argparse.ArgumentParser()
     ap.add_argument("--tokens", type=int, default=1)
     ap.add_argument("--prompt-tokens", default="1008,10484,318,15383,387")

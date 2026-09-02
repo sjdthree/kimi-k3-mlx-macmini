@@ -16,6 +16,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.attention_kda import KDAAttention as KDAmlx  # noqa: E402
 from air_llm.models.kimi_k3.attention_mla import MLAAttention as MLAmlx  # noqa: E402
 from k3ref.layers import K3Config, KDAAttention as KDAref, MLAAttention as MLAref  # noqa: E402
@@ -148,6 +149,7 @@ def test_alog_guard():
 
 
 if __name__ == "__main__":
+    require_checkpoint()
     print(f"M4/M5 gates: MLX attention vs k3ref   (device {mx.default_device()})")
     print("=" * 68)
     test_mla()

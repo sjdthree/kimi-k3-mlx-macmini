@@ -21,6 +21,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.loader import TensorSource  # noqa: E402
 from air_llm.models.kimi_k3.model import (  # noqa: E402
     EMBED, FINAL_NORM, LM_HEAD, OUT_RES_NORM, OUT_RES_PROJ, KimiK3Model)
@@ -40,6 +41,7 @@ def check(label, ok, detail=""):
 
 
 def main():
+    require_checkpoint()
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--cache", default=str(Path("~/k3_cache").expanduser()))

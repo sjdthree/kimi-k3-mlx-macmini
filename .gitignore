@@ -13,6 +13,10 @@ k3_cache/
 # integration test regenerates it automatically if absent)
 mini-k3/
 
+# Claude Code local settings. Contains machine-specific paths and permission
+# grants; never publish. (Previously ignored only by a global gitignore.)
+.claude/
+
 __pycache__/
 *.py[cod]
 .DS_Store

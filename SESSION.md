@@ -1,5 +1,11 @@
 # Session state — 2026-08-07, updated 2026-08-09
 
+> **Archived working notes.** This is the author's live scratchpad as it stood on
+> 2026-08-09, kept because it records what was running, what was uncertain, and what the
+> open questions were at the time. PIDs, in-flight jobs and "right now" are all historical.
+> For the project as it stands, start at [README.md](README.md) and
+> [VALIDATION_REPORT.md](VALIDATION_REPORT.md).
+
 Picking this up after a break? Read this first, then `PROGRESS.md` for the engineering
 record and `VALIDATION_REPORT.md` for results.
 

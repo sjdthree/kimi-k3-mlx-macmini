@@ -18,6 +18,7 @@ import mlx.core as mx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.loader import TensorSource  # noqa: E402
 from air_llm.models.kimi_k3.model import KimiK3Model  # noqa: E402
 from k3ref.layers import K3Config  # noqa: E402
@@ -45,6 +46,7 @@ def gen(mode, prompt, n_tokens, layers=2, resident_gb=0.0, fused=None):
 
 
 def main():
+    require_checkpoint()
     print(f"spec section 13 gate: numerical modes   (device {mx.default_device()})")
     print("=" * 74)
 

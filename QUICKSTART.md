@@ -14,7 +14,7 @@ correctness oracle.
 
 ```bash
 conda create -n airllm python=3.12 -y && conda activate airllm
-pip install mlx numpy tiktoken
+pip install -e .        # mlx, numpy, tiktoken
 ```
 
 Verify MLX sees the GPU:
@@ -105,7 +105,7 @@ you have more RAM; watch the `peak` column.
 ## Verify your install is correct
 
 ```bash
-pip install torch einops compressed-tensors     # oracle-only dependencies
+pip install -e '.[oracle]'                     # oracle-only dependencies (torch, einops)
 python tests/test_synthetic_integration.py      # ~30 s, needs no checkpoint
 python tests/test_mxfp4_mlx.py                  # MXFP4 decode vs oracle
 ```

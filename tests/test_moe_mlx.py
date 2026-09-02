@@ -16,6 +16,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.moe import LatentMoE as MoEmlx  # noqa: E402
 from k3ref.layers import K3Config, LatentMoE as MoEref  # noqa: E402
 from k3ref.weights import WeightStore  # noqa: E402
@@ -50,6 +51,7 @@ def build(cfg, ws):
 
 
 def main():
+    require_checkpoint()
     cfg = K3Config.load()
     ws = WeightStore()
     print(f"M6 gate: router + latent MoE, real layer {LAYER}   (device {mx.default_device()})")

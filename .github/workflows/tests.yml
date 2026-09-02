@@ -1,0 +1,45 @@
+name: tests
+
+# The checkpoint-free half of the suite: MXFP4 decode, the fused Metal matvec, the MLA
+# latent cache, state round-trip, the synthetic end-to-end model, and OpenAI /v1
+# conformance. Suites that compare against the real 1.42 TiB checkpoint skip themselves.
+#
+# Runners must be Apple Silicon -- mlx has no x86 build.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-14        # arm64 (M1)
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Verify the runner is Apple Silicon
+        run: |
+          test "$(uname -m)" = "arm64" || { echo "mlx needs arm64; got $(uname -m)"; exit 1; }
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Show versions
+        run: |
+          python -c "import mlx.core as mx; print('mlx      ', mx.__version__ if hasattr(mx,'__version__') else 'ok')"
+          python -c "import numpy, torch, tiktoken; print('numpy    ', numpy.__version__); print('torch    ', torch.__version__)"
+
+      - name: Run the suite
+        run: python tests/run_all.py

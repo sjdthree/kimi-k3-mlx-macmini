@@ -16,6 +16,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from k3ref.layers import (K3Config, DecoderLayer, apply_attn_res, situ,  # noqa: E402
                           rmsnorm, l2norm)
 from k3ref.weights import WeightStore, decode_mxfp4  # noqa: E402
@@ -168,6 +169,7 @@ def test_kda_state():
 
 
 if __name__ == "__main__":
+    require_checkpoint()
     print("k3ref M2 gate\n" + "=" * 60)
     test_situ()
     test_attn_res_is_a_softmax_mixture()

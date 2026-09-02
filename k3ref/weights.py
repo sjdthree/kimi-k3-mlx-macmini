@@ -41,6 +41,19 @@ def _bf16(a: np.ndarray) -> np.ndarray:
     return (a.astype(np.uint32) << 16).view(np.float32)
 
 
+def _open_manifest(path):
+    """gzip.open with an actionable error; the manifest is gitignored and rebuilt."""
+    try:
+        return gzip.open(path, "rt")
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"manifest not found: {path}\n"
+            f"It is machine-specific (it embeds an absolute checkpoint path) and so is\n"
+            f"gitignored. Rebuild it in ~8 s:\n"
+            f"    python tools/k3_manifest.py build --ckpt /path/to/Kimi-K3 --out {path}"
+        ) from None
+
+
 class WeightStore:
     def __init__(self, cache: Path = CACHE,
                  manifest: Path = Path(os.environ.get("K3_MANIFEST",
@@ -60,7 +73,7 @@ class WeightStore:
     def manifest(self) -> dict:
         if self._mani is None:
             m = {}
-            with gzip.open(self._manifest_path, "rt") as fh:
+            with _open_manifest(self._manifest_path) as fh:
                 for line in fh:
                     r = json.loads(line)
                     if not r.get("__meta__"):

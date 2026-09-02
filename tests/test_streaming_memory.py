@@ -25,6 +25,7 @@ import mlx.core as mx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.loader import TensorSource  # noqa: E402
 from air_llm.models.kimi_k3.model import KimiK3Model  # noqa: E402
 from air_llm.models.kimi_k3.recurrent_state import KimiK3State  # noqa: E402
@@ -58,6 +59,7 @@ def reset_peak():
 
 
 def main():
+    require_checkpoint()
     cfg = K3Config.load()
     cfg.num_hidden_layers = 2                 # layers 0-1: both fully cached locally
     src = TensorSource(cache=str(Path("~/k3_cache").expanduser()))

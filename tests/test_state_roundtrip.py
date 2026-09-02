@@ -18,6 +18,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import require_checkpoint  # noqa: E402
 from air_llm.models.kimi_k3.attention_kda import KDAAttention as KDAmlx  # noqa: E402
 from air_llm.models.kimi_k3.recurrent_state import (  # noqa: E402
     CANONICAL_CONV_LAYOUT, KimiK3State, conv_from_canonical, conv_to_canonical, fmt_bytes)
@@ -40,6 +41,7 @@ def load_mx(ws, layer, keys):
 
 
 def main():
+    require_checkpoint()
     cfg = K3Config.load()
     ws = WeightStore()
     L = cfg.kda_layers[1]
