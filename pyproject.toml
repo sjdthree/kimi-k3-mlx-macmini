@@ -52,7 +52,7 @@ k3-serve = "air_llm.serve:main"
 
 [project.urls]
 Homepage = "https://github.com/sjdthree/kimi-k3-mlx-macmini"
-Documentation = "https://github.com/sjdthree/kimi-k3-mlx-macmini/blob/master/README.md"
+Documentation = "https://github.com/sjdthree/kimi-k3-mlx-macmini/blob/main/README.md"
 
 [tool.setuptools.packages.find]
 include = ["air_llm*", "k3ref*"]
