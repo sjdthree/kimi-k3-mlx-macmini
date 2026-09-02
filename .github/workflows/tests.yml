@@ -1,10 +1,16 @@
 name: tests
 
-# The checkpoint-free half of the suite: MXFP4 decode, the fused Metal matvec, the MLA
-# latent cache, state round-trip, the synthetic end-to-end model, and OpenAI /v1
-# conformance. Suites that compare against the real 1.42 TiB checkpoint skip themselves.
+# The checkpoint-free half of the suite: MXFP4 decode against compressed-tensors, the
+# fused Metal matvec, the MLA latent cache, quantised latent storage, KDA prefill memory,
+# an end-to-end run on a 2.7 MB synthetic model, per-token logging, and 29 OpenAI /v1
+# conformance checks. Expected: 8 passed, 10 skipped, 0 failed.
 #
-# Runners must be Apple Silicon -- mlx has no x86 build.
+# The ten suites that compare against the real 1.42 TiB checkpoint skip themselves unless
+# K3_CKPT is set, which no runner can satisfy. test_full_parity takes hours and is opt-in
+# via `tests/run_all.py --include-slow`.
+#
+# Runners must be Apple Silicon -- mlx has no x86 build. macos-latest is arm64; the
+# explicit uname guard below fails loudly rather than silently if that ever changes.
 
 on:
   push:
@@ -12,9 +18,21 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Least privilege: this workflow only reads the tree.
+permissions:
+  contents: read
+
+# A newer push supersedes an in-flight run rather than queueing another macOS job.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    runs-on: macos-14        # arm64 (M1)
+    runs-on: macos-latest
+    # macOS minutes bill at 10x on private repos, and a hung job would otherwise run for
+    # the 6-hour default. The suite takes about a minute.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -38,8 +56,8 @@ jobs:
 
       - name: Show versions
         run: |
-          python -c "import mlx.core as mx; print('mlx      ', mx.__version__ if hasattr(mx,'__version__') else 'ok')"
-          python -c "import numpy, torch, tiktoken; print('numpy    ', numpy.__version__); print('torch    ', torch.__version__)"
+          python -c "import mlx.core as mx; print('mlx  ', getattr(mx, '__version__', 'ok'))"
+          python -c "import numpy, torch, tiktoken; print('numpy', numpy.__version__); print('torch', torch.__version__)"
 
       - name: Run the suite
         run: python tests/run_all.py

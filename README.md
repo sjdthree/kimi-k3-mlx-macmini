@@ -1,5 +1,7 @@
 # Kimi-K3 on Apple Silicon (MLX)
 
+[![tests](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml/badge.svg)](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml)
+
 Runs the full **2.8-trillion-parameter Kimi-K3** — the complete 1.42 TiB checkpoint, all
 93 layers — on a Mac mini, at **~32 s/token** with a **15 GiB** memory peak.
 
