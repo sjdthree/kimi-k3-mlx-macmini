@@ -19,9 +19,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import CKPT  # noqa: E402  -- honours K3_CKPT
 from air_llm.models.kimi_k3.tokenizer import load  # noqa: E402
 
-CKPT = Path("/Volumes/LLMModels/Kimi-K3")
 FAILS = 0
 
 

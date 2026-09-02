@@ -15,7 +15,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from k3ref.weights import CKPT  # noqa: E402
+from k3ref.weights import CKPT  # noqa: E402  -- K3_CKPT, or the documented default
+
+__all__ = ["CKPT", "checkpoint_available", "require_checkpoint"]
 
 
 def checkpoint_available() -> bool:
