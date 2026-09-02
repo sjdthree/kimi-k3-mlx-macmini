@@ -16,6 +16,7 @@ import mlx.core as mx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import CKPT, checkpoint_available  # noqa: E402
 from air_llm.kernels.metal.mxfp4_matvec import mxfp4_matvec_fused  # noqa: E402
 from air_llm.models.kimi_k3.mxfp4 import (  # noqa: E402
     decode_mxfp4_mlx, decode_mxfp4_reference, mxfp4_matvec)
@@ -122,9 +123,13 @@ if __name__ == "__main__":
     print(f"M10 gate: fused Metal MXFP4 matvec   (device {mx.default_device()})")
     print("=" * 70)
     test_synthetic()
-    test_real()
-    test_beats_unfused_accuracy()
-    test_speed()
+    if checkpoint_available():
+        test_real()
+        test_beats_unfused_accuracy()
+        test_speed()
+    else:
+        print(f"  [SKIP] real-weight gates: no checkpoint at {CKPT}")
+        print("         set K3_CKPT=/path/to/Kimi-K3 to run them")
     print("=" * 70)
     print(f"M10: {'PASS' if FAILS == 0 else f'FAIL ({FAILS})'}")
     sys.exit(1 if FAILS else 0)

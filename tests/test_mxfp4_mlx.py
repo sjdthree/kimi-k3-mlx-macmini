@@ -15,6 +15,7 @@ import mlx.core as mx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _harness import CKPT, checkpoint_available  # noqa: E402
 from air_llm.models.kimi_k3.mxfp4 import (  # noqa: E402
     decode_mxfp4_mlx, decode_mxfp4_reference, decode_scale_mlx, mxfp4_matvec)
 from k3ref.weights import WeightStore  # noqa: E402
@@ -149,10 +150,14 @@ if __name__ == "__main__":
     print("=" * 62)
     test_all_codes()
     test_all_scales()
-    test_scale_range_precondition()
-    test_real_tensors()
-    test_matvec()
-    test_speed()
+    if checkpoint_available():
+        test_scale_range_precondition()
+        test_real_tensors()
+        test_matvec()
+        test_speed()
+    else:
+        print(f"  [SKIP] real-weight gates: no checkpoint at {CKPT}")
+        print("         set K3_CKPT=/path/to/Kimi-K3 to run them")
     print("=" * 62)
     print(f"M3: {'PASS' if FAILS == 0 else f'FAIL ({FAILS})'}")
     sys.exit(1 if FAILS else 0)
