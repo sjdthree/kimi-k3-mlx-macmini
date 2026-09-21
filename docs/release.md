@@ -6,16 +6,19 @@ the evidence in hand. Record where that evidence lives next to the box.
 
 ## 1. Checkpoint-free checks (any Apple Silicon Mac)
 
-- [ ] Fresh clone into an empty directory, then the README commands verbatim, on
+- [x] Fresh clone into an empty directory, then the README commands verbatim, on
       Python 3.11 **and** 3.12:
       `python -m pip install -c constraints-test.txt -e '.[dev]'` then
-      `python tests/run_all.py` → **8 passed, 10 skipped, 0 failed**.
-- [ ] `python tools/summarize_evidence.py` reproduces every figure in
-      [evidence.md](evidence.md).
-- [ ] Every relative link in the Markdown files resolves.
-- [ ] From a clean tree (`rm -rf build dist`; a stale `build/` leaks old files into the
+      `python tests/run_all.py` → **8 passed, 10 skipped, 0 failed**. 2026-09-21: both
+      versions on the audit machine; 3.12 again from a fresh clone of `dafe1e4` on the
+      benchmark machine; CI runs both on every push.
+- [x] `python tools/summarize_evidence.py` reproduces every figure in
+      [evidence.md](evidence.md). Checked 2026-09-21; CI also runs it.
+- [x] Every relative link in the Markdown files resolves. 2026-09-21: 31 files, none broken.
+- [x] From a clean tree (`rm -rf build dist`; a stale `build/` leaks old files into the
       wheel), `python -m pip wheel --no-deps -w dist .` builds, and the wheel contains
       `LICENSE`, `NOTICE`, `licenses/LICENSE.*` and `k3ref/_vendor/kda_naive.py`.
+      2026-09-21: all present; metadata `License-Expression: LicenseRef-Project-Mixed`.
 - [ ] CI is green on the commit being released.
 
 ## 2. Full-checkpoint validation (the benchmark machine)
@@ -31,10 +34,11 @@ checkpoint revision (`K3_REVISION`) for every run.
       `test_full_parity`. 2026-09-21: 18 passed, 0 failed; 0.99999976 (layer 14), 92/92,
       token 17374. Evidence: `runs/release-validation-2026-09-21/`.
 - [x] `python tests/test_numerical_modes.py` passes. Evidence: `runs/release-validation-2026-09-21/`.
-- [ ] Full-depth smoke test from [INSTALL.md](../INSTALL.md#first-full-depth-run)
+- [x] Full-depth smoke test from [INSTALL.md](../INSTALL.md#first-full-depth-run)
       (`--check-finite --validation-log smoke.jsonl`): 93 layers, no nonfinite values,
       coherent text. 2026-09-21: 93 layers, 0 nonfinite, tokens `[17374, 20829, 10, 427]`
-      ("Paris." and then code-like punctuation), matching the historical runs. Evidence: `runs/release-validation-2026-09-21/`.
+      ("Paris." and then code-like punctuation), matching the historical runs. The owner accepted this, as a raw five-token prompt with
+      no chat template. Evidence: `runs/release-validation-2026-09-21/`.
 - [x] Either add the new results to [evidence.md](evidence.md) with their logs, or leave
       the README's statement that the quoted numbers are historical.
 
@@ -42,38 +46,50 @@ checkpoint revision (`K3_REVISION`) for every run.
 
 These are decisions, not tests. [licensing.md](licensing.md) has the details.
 
-- [ ] Upstream revisions and hashes recorded for `k3ref/_vendor/kda_naive.py`
+- [x] Upstream revisions and hashes recorded for `k3ref/_vendor/kda_naive.py`
       (flash-linear-attention), Moonshot's `modeling_kimi_linear.py` (basis of `k3ref/`
       and `config.py`) and `tokenization_kimi.py` (the `PAT_STR` in `tokenizer.py`).
-- [ ] Decision recorded on whether the Kimi K3 License permits publishing `k3ref/`,
+      See [licensing.md](licensing.md#upstream-sources-verified-2026-09-21).
+- [x] Decision recorded on whether the Kimi K3 License permits publishing `k3ref/`,
       `config.py` and the tokenizer pattern here, including its commercial and branding
-      conditions.
-- [ ] `p0/run_qwen3_mlx.py` (AirLLM-derived) and `p0/p0_4_kda_layer.py` (Moonshot/FLA
-      operations) reviewed: notices added, or the files removed. `run_qwen3_mlx.py`
-      removed 2026-09-21; `p0_4_kda_layer.py` still to review.
-- [ ] README credit links to the canonical URL of Gavin Li's Kimi-K3 article.
-- [ ] README, NOTICE, `pyproject.toml` and the wheel all describe the distribution as
-      mixed-license, never as uniformly MIT.
+      conditions. 2026-09-21, owner: publish under the Kimi K3 License with its notice,
+      and summarise sections 2 and 3 in the README.
+- [x] `p0/run_qwen3_mlx.py` (AirLLM-derived) and `p0/p0_4_kda_layer.py` (Moonshot/FLA
+      operations) reviewed: notices added, or the files removed. 2026-09-21:
+      `run_qwen3_mlx.py` and `validate_mlx.py` removed; `p0_4_kda_layer.py` has a
+      provenance header.
+- [x] README credit links to the canonical URL of Gavin Li's Kimi-K3 article.
+- [x] README, NOTICE, `pyproject.toml` and the wheel all describe the distribution as
+      mixed-license, never as uniformly MIT. `CITATION.cff` deliberately has no license
+      field.
 
 ## 4. Repository hygiene before the visibility change
 
 - [ ] History scan: no secrets, keys, tokens, private email addresses or personal data in
       any reachable commit: `gitleaks git --log-opts=--all --redact .` and
       `gitleaks dir --redact .` report no leaks. Reviewed false positives are listed in
-      `.gitleaksignore`; add to it only after reading the match.
-- [ ] No large or unexpected blobs in history
-      (`git rev-list --objects --all | git cat-file --batch-check`).
-- [ ] Machine-specific paths remain only in files marked historical and in raw logs.
-- [ ] GitHub settings: description and topics set; private vulnerability reporting
+      `.gitleaksignore`; add to it only after reading the match. 2026-09-21: gitleaks
+      8.30.1 reports no leaks in 58 commits or the tree. **Open:** commit metadata
+      carries a university address and a machine hostname (see the owner's decision).
+- [x] No large or unexpected blobs in history
+      (`git rev-list --objects --all | git cat-file --batch-check`). Largest blob 482 KB.
+- [x] Machine-specific paths remain only in files marked historical and in raw logs.
+- [x] GitHub settings: description and topics set; private vulnerability reporting
       enabled (for [SECURITY.md](../SECURITY.md)); decide whether issues/discussions are on;
-      branch protection on `main` requiring CI.
+      branch protection on `main` requiring CI. 2026-09-21: issues and Discussions on
+      (blank issues routed to Discussions), wiki and projects off, ruleset "protect main"
+      (no deletion or force-push, both CI checks required, admin bypass). Vulnerability
+      reporting needs a public repo: see gate 5.
 
 ## 5. Going public
 
 - [ ] Push `main`; wait for CI to pass on that exact commit.
 - [ ] Change the visibility to public (owner action).
 - [ ] Enable private vulnerability reporting (GitHub offers it only on public repos).
+- [ ] Upload [social-preview.png](social-preview.png) under Settings → General → Social
+      preview (there is no API for it).
 - [ ] From a signed-out browser: README renders, the CI badge (if any) and links work,
       and the license is detected.
-- [ ] Optional: tag `v0.1.0` with release notes that repeat the claim scope from the
-      README (historical measurements, one machine, text-only, mixed licensing).
+- [ ] Publish the drafted `v0.1.0` release, which creates the tag. Its notes repeat the
+      claim scope from the README (historical measurements, one machine, text-only,
+      mixed licensing).
