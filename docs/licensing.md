@@ -8,20 +8,47 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | Material | Origin | Treatment / outstanding review |
 |---|---|---|
 | First-party MLX/Metal implementation and tooling | Steve Derezinski | MIT, subject to identified copied/adapted portions below |
-| `k3ref/` | Moonshot `modeling_kimi_linear.py` | Kimi K3 License; CPU reference adaptations; exact originating snapshot unrecorded |
+| `k3ref/` | Moonshot `modeling_kimi_linear.py` | Kimi K3 License; CPU reference adaptations. Upstream file identical in every public revision (see below) |
 | `air_llm/models/kimi_k3/config.py` | Extracted from the reference adapter | Conservatively retain Moonshot attribution/Kimi terms |
-| `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern; Kimi license notice required |
-| `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; upstream revision unrecorded |
+| `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern (confirmed by diff); Kimi license notice required |
+| `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; byte-identical to upstream (see below) |
 | `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Human review of adaptation scope; preserve source anchors and both notices |
-| `p0/run_qwen3_mlx.py` | AirLLM classes/streaming prototype | Human review of copied versus imported portions; preserve AirLLM credit |
+| `p0/run_qwen3_mlx.py` | Imports AirLLM; adapts its `Attention`/`TransformerBlock` from `airllm_llama_mlx.py` | **Apache License 2.0** (not MIT). Needs the Apache text and a modification notice, or exclusion from the release |
 | Checkpoint/tokenizer data | Moonshot | Separate download, not redistributed here |
 
 Sources: [Kimi model/license](https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE),
 [FLA license](https://github.com/fla-org/flash-linear-attention/blob/main/LICENSE),
 [AirLLM license](https://github.com/lyogavin/airllm/blob/main/LICENSE).
-Gavin Li's article is titled *Unbelievable! Run Kimi K3–2.8 Trillion Parameters —
-on a Single 4GB GPU*. Link to the canonical author publication once confirmed;
-do not vendor a full copy of the article.
+Gavin Li's article, *Unbelievable! Run Kimi K3–2.8 Trillion Parameters — on a Single
+4GB GPU* (AI Advances, 29 July 2026):
+<https://aiadvances.org/unbelievable-run-kimi-k3-2-8-trillion-parameters-on-a-single-4gb-gpu-23590e7a16c2>.
+It describes AirLLM as MIT-licensed; the AirLLM repository itself is Apache 2.0, and
+this project follows the repository. Do not vendor a copy of the article.
+
+## Upstream sources, verified 2026-09-21
+
+- **flash-linear-attention.** `k3ref/_vendor/kda_naive.py` (git blob
+  `51ff7076b26244366cf7ed2999ed13052da19cd5`) is byte-identical to
+  `fla/ops/kda/naive.py` from commit
+  [`14bef3d9`](https://github.com/fla-org/flash-linear-attention/blob/14bef3d9ec98ee359c9a9c7860795d91675dd091/fla/ops/kda/naive.py)
+  (2026-04-17) through current main, including tags v0.5.0–v0.5.2. Line anchors cited
+  in `k3ref/` and `p0/` match FLA main from 2026-07-25, so the copy was most likely
+  taken between 2026-07-25 and 2026-08-07 (around v0.5.2). The upstream LICENSE is
+  identical to `licenses/LICENSE.flash-linear-attention`.
+- **moonshotai/Kimi-K3.** Public and ungated, with 8 commits, the first
+  [`c5d1dd4c`](https://huggingface.co/moonshotai/Kimi-K3/tree/c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721)
+  on 2026-07-27. `LICENSE`, `config.json`, `modeling_kimi_linear.py`,
+  `tokenization_kimi.py` and every weight shard are unchanged across all of them, so
+  the content this project used is the same whichever revision was downloaded. All 12
+  source anchors in `k3ref/layers.py` line up with `modeling_kimi_linear.py`. The
+  upstream LICENSE is identical to `licenses/LICENSE.kimi-k3`.
+- **AirLLM.** Apache License 2.0 in every revision (`LICENSE` and `air_llm/LICENSE`),
+  declared as Apache in `setup.py`, with no NOTICE file and no filled-in copyright
+  line. The adapted code in `p0/run_qwen3_mlx.py` itself follows Apple's
+  `mlx-examples/llms/llama/llama.py` (MIT, Copyright © 2023 Apple Inc.).
+- **Date discrepancy.** Project notes and the API alias `kimi-k3-2026-07-16` imply a
+  download from 2026-07-16, but the first public Hugging Face commit is 2026-07-27. The
+  content is identical in either case; the date on the alias is unexplained.
 
 The checked-in Kimi license has conditional commercial provisions, including
 model-as-a-service revenue and certain branding conditions. Have a human assess their

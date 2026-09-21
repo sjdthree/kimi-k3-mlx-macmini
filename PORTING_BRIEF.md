@@ -135,7 +135,8 @@ Deliver **correctness-first** (a slow, numerically-correct reference) before any
 - Env: miniforge conda env `airllm`, native arm64 Python 3.12, `airllm 3.1.0` + `mlx` + `torch`; MLX
   confirmed on the Metal GPU. AirLLM's MLX layer-streaming validated end-to-end (TinyLlama-1.1B and a
   patched Qwen3-32B at ~18 s/token).
-- Upstream: AirLLM (MIT) https://github.com/lyogavin/airllm ; `flash-linear-attention` (KDA);
+- Upstream: AirLLM (Apache License 2.0 — this brief originally said MIT, which was wrong)
+  https://github.com/lyogavin/airllm ; `flash-linear-attention` (KDA);
   `compressed-tensors` (MXFP4). A CUDA box with a working K3 run is required to generate the parity
   reference.
 

@@ -7,8 +7,9 @@ This distribution contains separately licensed material and is not uniformly MIT
    Source: fla/ops/kda/naive.py, https://github.com/fla-org/flash-linear-attention
    Copyright (c) 2023-2026 Songlin Yang, Yu Zhang, Zhiyuan Li
    MIT License; see licenses/LICENSE.flash-linear-attention.
-   Retained as the pure-PyTorch KDA reference kernel. The original upstream revision
-   was not recorded; see docs/licensing.md for the provenance review status.
+   Retained unmodified as the pure-PyTorch KDA reference kernel. Byte-identical to
+   upstream from commit 14bef3d9ec98ee359c9a9c7860795d91675dd091 onward; see
+   docs/licensing.md.
 
 2. k3ref/ and air_llm/models/kimi_k3/config.py
    Derived/adapted from modeling_kimi_linear.py and configuration semantics shipped
@@ -30,11 +31,12 @@ This distribution contains separately licensed material and is not uniformly MIT
    of upstream material is made.
 
 5. AirLLM and Gavin Li
-   https://github.com/lyogavin/airllm (MIT)
+   https://github.com/lyogavin/airllm (Apache License 2.0)
    This project was inspired by and extends AirLLM and Gavin Li's Kimi-K3 work.
    SSD/layer/expert streaming is prior work, not an invention of this project.
-   p0/run_qwen3_mlx.py uses/adapts AirLLM classes; its provenance/license review is
-   recorded in docs/licensing.md. The air_llm package name does not imply affiliation.
+   p0/run_qwen3_mlx.py imports AirLLM and adapts code from its airllm_llama_mlx.py
+   (Apache License 2.0), which in turn derives from Apple's mlx-examples (MIT);
+   its license review is recorded in docs/licensing.md. The air_llm package name does not imply affiliation.
 
 Kimi-K3 weights and tokenizer data are distributed separately by Moonshot AI under
 its terms and are not bundled here. See docs/licensing.md for unresolved provenance
