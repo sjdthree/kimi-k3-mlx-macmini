@@ -25,15 +25,17 @@ the logit checksum and MXFP4 scale checks. The historical results predate them, 
 must be re-run on the release commit before they are quoted for it. Record the upstream
 checkpoint revision (`K3_REVISION`) for every run.
 
-- [ ] `tools/k3_manifest.py verify` passes on the checkpoint.
-- [ ] `K3_CKPT=... python tests/run_all.py --include-slow` → 0 failed. Record the
+- [x] `tools/k3_manifest.py verify` passes on the checkpoint. Evidence: `runs/release-validation-2026-09-21/`.
+- [x] `K3_CKPT=... python tests/run_all.py --include-slow` → 0 failed. Record the
       worst-layer cosine, router matches (expect 92/92) and greedy token from
-      `test_full_parity`.
-- [ ] `python tests/test_numerical_modes.py` passes.
+      `test_full_parity`. 2026-09-21: 18 passed, 0 failed; 0.99999976 (layer 14), 92/92,
+      token 17374. Evidence: `runs/release-validation-2026-09-21/`.
+- [x] `python tests/test_numerical_modes.py` passes. Evidence: `runs/release-validation-2026-09-21/`.
 - [ ] Full-depth smoke test from [INSTALL.md](../INSTALL.md#first-full-depth-run)
       (`--check-finite --validation-log smoke.jsonl`): 93 layers, no nonfinite values,
-      coherent text.
-- [ ] Either add the new results to [evidence.md](evidence.md) with their logs, or leave
+      coherent text. 2026-09-21: 93 layers, 0 nonfinite, tokens `[17374, 20829, 10, 427]`
+      ("Paris." and then code-like punctuation), matching the historical runs. Evidence: `runs/release-validation-2026-09-21/`.
+- [x] Either add the new results to [evidence.md](evidence.md) with their logs, or leave
       the README's statement that the quoted numbers are historical.
 
 ## 3. Human sign-off: provenance and licensing
@@ -69,6 +71,7 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
 
 - [ ] Push `main`; wait for CI to pass on that exact commit.
 - [ ] Change the visibility to public (owner action).
+- [ ] Enable private vulnerability reporting (GitHub offers it only on public repos).
 - [ ] From a signed-out browser: README renders, the CI badge (if any) and links work,
       and the license is detected.
 - [ ] Optional: tag `v0.1.0` with release notes that repeat the claim scope from the

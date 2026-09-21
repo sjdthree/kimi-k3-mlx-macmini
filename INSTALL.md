@@ -112,7 +112,8 @@ prefill, cold reads, numerical checks, and machine load affect timing. Historica
 test directly with that mean. `--max-memory-gb` is an after-layer MLX allocator check,
 not a hard OS allocation cap; leave system headroom and monitor memory pressure/swap.
 
-For the numerical release gate (expensive, potentially hours):
+For the numerical release gate (about 10 minutes for one token on the benchmark machine
+in 2026-09; the oracle runs on the CPU, so slower machines can take much longer):
 
 ```sh
 python tests/test_full_parity.py --ckpt "$K3_CKPT" --manifest "$K3_MANIFEST" \

@@ -38,15 +38,16 @@ operations and a Metal kernel instead.
 | ~15 GiB memory | MLX allocator high-water mark, not RSS or system memory |
 | 53.3× smaller MLA cache | Logical fp32 payload: 2,949,120 → 55,296 bytes/context token across 24 MLA layers; excludes KDA state and capacity slack |
 | ~2.35× historical improvement | Whole-run seconds/output-token, including prefill; different output lengths and resident budgets, not an isolated cache-only A/B |
-| 0.99999988 worst-layer cosine | Historical full-depth fp32 run against the derived PyTorch/CPU oracle; one generated token, 92/92 routers matched |
+| 0.99999976 worst-layer cosine | Full-depth fp32 run against the derived PyTorch/CPU oracle, rerun at the release commit on 2026-09-21; one generated token, 92/92 routers matched (historical run: 0.99999988) |
 | 9.5× fused kernel microbenchmark | One MXFP4 projection benchmark; not an end-to-end speedup |
 
 The [evidence ledger](docs/evidence.md) defines sample selection, configuration,
 units, numerical scope, and corrections to older reports. Raw logs remain intact.
-These are **historical results**, not performance promises for the current checkout.
-The release corrections change numerical modes, diagnostics, and execution; full
-checkpoint parity and timing must be rerun before attributing the old numbers to a
-new release. No CUDA end-to-end comparison or million-token-context test is claimed.
+Full-checkpoint parity, the smoke test and the numerical-mode tests were rerun at the
+release commit on 2026-09-21 and passed. The smoke test's decode time and bytes read per
+token matched the historical 8 GiB runs. The timing, memory and speedup figures are still
+**historical results** from the earlier sweep and runs. They are not performance
+promises for the current checkout. No CUDA end-to-end comparison or million-token-context test is claimed.
 
 ## Try it without the checkpoint
 

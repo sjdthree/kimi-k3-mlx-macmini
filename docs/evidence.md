@@ -93,8 +93,17 @@ separate accuracy tradeoffs, not included in this fp32 ratio.
   token following five prompt tokens, worst-layer cosine **0.99999988** (layer 22),
   92/92 router selections matched, greedy token 17374 matched. The oracle substitutes
   CPU operations for CUDA/Triton kernels; this is not a CUDA-reference run. Validation
-  mode previously still used the fused path despite its help text. The corrected
-  unfused validation path needs a fresh checkpoint run.
+  mode previously still used the fused path despite its help text.
+- **Rerun at the release commit, 2026-09-21** (`797f0ac`, `K3_REVISION` `c5d1dd4c`),
+  with the corrected unfused validation path: worst-layer cosine **0.99999976**
+  (layer 14), 92/92 routers matched, greedy token 17374 matched. Near 1.0, fp32 values
+  are spaced 2⁻²⁴ ≈ 6e-8 apart, so the two worst-layer cosines differ by two fp32 steps.
+  The full-depth smoke test (`--check-finite`, 8 GiB residency) generated the same four
+  tokens `[17374, 20829, 10, 427]` as `results/m8_pinned.jsonl` and
+  `results/reliability_real/p0_l0.jsonl`, with no nonfinite values. It read 119.58 GiB
+  per decode token, matching the 8 GiB sweep, and its three decode tokens took 33.3–33.8 s.
+  Three samples do not replace the sweep's mean. Logs and environment:
+  `runs/release-validation-2026-09-21/`.
 - **9.5×** is a historical one-projection Metal microbenchmark (3.33 / 0.35 ms).
   **“1500× more accurate”** was a ratio of normalized maximum errors against an fp64
   projection oracle (2.95e-3 / 1.93e-6 ≈ 1,528). It is not model accuracy, general

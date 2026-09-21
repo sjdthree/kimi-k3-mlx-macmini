@@ -76,6 +76,10 @@ it, the model continues with code/diff punctuation, which is plausible for a raw
 five-token prompt with no chat template. Treat this as a finite, full-depth run with a
 correct first answer, not as a quality evaluation.
 
+The four token ids are identical to three historical runs of the same prompt:
+`results/m8_gen.jsonl`, `results/m8_pinned.jsonl` and `results/reliability_real/p0_l0.jsonl`.
+The historical 8 GiB sweep's first three decode tokens took 35.3, 35.5 and 32.0 s.
+
 Three decode samples are not a benchmark and are not comparable with the 39-sample
 32.43 s/token mean. The logical read per decode token (119.58 GiB) matches the
 historical 8 GiB steady figure (119.5796 GiB) exactly. MLX peak is an allocator
