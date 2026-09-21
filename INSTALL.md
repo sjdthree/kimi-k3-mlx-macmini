@@ -8,6 +8,12 @@ measurements used an M4 Pro Mac mini, 64 GiB unified memory, and local USB4 NVMe
 storage on a rear Thunderbolt port. A 32 GiB full-model configuration is unvalidated.
 CI/synthetic success on another Mac does not validate its full-model performance.
 
+Connect a USB4/Thunderbolt NVMe enclosure to a **rear** Thunderbolt port. On the M4 Pro
+Mac mini the front USB-C ports are 10 Gbps USB. There the enclosure falls back to USB
+mass storage, and it measured about 1.06 GB/s sequential versus 3.88 GB/s on a rear
+port. Confirm with `ioreg -rc IONVMeController`: the drive should be listed with
+`"Physical Interconnect Location" = "External"`, not only under `IOUSBHostDevice`.
+
 Allow **~1.42 TiB for the checkpoint**, plus download/cache headroom. Dense staging is
 optional and needs approximately **106 GiB extra**. A disk microbenchmark can need
 another **80 GiB or more**; do not run it during inference measurements. A nominal 2 TB
