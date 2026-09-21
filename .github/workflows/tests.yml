@@ -2,8 +2,8 @@ name: tests
 
 # The checkpoint-free half of the suite: MXFP4 decode against compressed-tensors, the
 # fused Metal matvec, the MLA latent cache, quantised latent storage, KDA prefill memory,
-# an end-to-end run on a 2.7 MB synthetic model, per-token logging, and 29 OpenAI /v1
-# conformance checks. Expected: 8 passed, 10 skipped, 0 failed.
+# an end-to-end run on a 2.7 MB synthetic model, per-token logging, and the OpenAI /v1
+# conformance checks against a mock engine. Expected: 8 passed, 10 skipped, 0 failed.
 #
 # The ten suites that compare against the real 1.42 TiB checkpoint skip themselves unless
 # K3_CKPT is set, which no runner can satisfy. test_full_parity takes hours and is opt-in
@@ -52,7 +52,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e '.[dev]'
+          pip install -c constraints-test.txt -e '.[dev]'
 
       - name: Show versions
         run: |
@@ -61,3 +61,6 @@ jobs:
 
       - name: Run the suite
         run: python tests/run_all.py
+
+      - name: Recompute the evidence ledger from the committed logs
+        run: python tools/summarize_evidence.py

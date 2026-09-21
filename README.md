@@ -1,5 +1,7 @@
 # Kimi-K3 on Apple Silicon / MLX
 
+[![tests](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml/badge.svg)](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml)
+
 Run the complete **2.8-trillion-parameter, ~1.42 TiB Kimi-K3 checkpoint locally
 on a 64 GB Mac mini**: all **93 language-model layers**, using SSD-backed
 per-expert streaming and native MLX/Metal execution.
