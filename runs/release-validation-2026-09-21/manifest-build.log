@@ -1,0 +1,3 @@
+scanning 96 shards ...
+wrote 497,220 tensor records -> /Users/momdad/Documents/GitHub/kimi-k3-mlx-macmini/manifest.jsonl.gz (7.1 MiB)
+python tools/k3_manifest.py build --ckpt "$K3_CKPT" --out "$K3_MANIFEST"  3.66s user 0.04s system 97% cpu 3.804 total

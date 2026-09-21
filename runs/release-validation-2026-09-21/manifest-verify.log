@@ -1,0 +1,26 @@
+  [PASS] no duplicate tensor names  0 dups
+  [PASS] manifest count == index.json count  manifest 497,220 vs index 497,220
+  [PASS] every tensor resolves to its index.json shard  0 mismatched
+  [PASS] no index.json tensor missing from shards  0 missing
+  [PASS] byte range matches shape x dtype for every tensor  0 bad
+  [PASS] all tensor ranges lie inside existing shard files  0 invalid
+  [PASS] config.json hash matches manifest
+  [PASS] model.safetensors.index.json hash matches manifest
+  logical tensor elements excluding quantization scales: 2,779,931,837,184
+  This census includes buffers; it is not automatically a trainable-parameter count.
+  [PASS] MoE layers are 1..92  got 92 layers
+  [PASS] every MoE layer has 896 experts x 3 weights x 2 tensors = 5,376  0 incomplete: {}
+  [PASS] every weight_packed has its weight_scale  0 orphans
+  [PASS] scale grouping == 32 everywhere  0 bad
+  [PASS] expert logical shapes (w1/w3 3072x3584, w2 3584x3072)  0 bad
+  [PASS] MLA layers match config (converted from 1-indexed)  [3, 7, 11, 15]... n=24
+  [PASS] KDA layers match config (converted from 1-indexed)  n=69
+  [PASS] MLA and KDA partition all layers
+  [PASS] A_log is stored at head_dim=128 on every KDA layer (zero-padded from num_heads=96; see P0_RESULTS.md)  n=69
+  [PASS] all shards referenced  96/96
+
+  total 1.420 TiB | text-dense 105.7 GiB | experts 1.316 TiB | vision 0.83 GiB
+  per-token expert reads: 16 x 92 layers = 24.1 GiB
+
+M1 verify: PASS
+python tools/k3_manifest.py verify --ckpt "$K3_CKPT" --manifest "$K3_MANIFEST  4.41s user 0.67s system 99% cpu 5.077 total

@@ -1,0 +1,18 @@
+[2026-09-21T16:37:09Z] start 4a-run_all: python tests/run_all.py
+vm.swapusage: total = 3072.00M  used = 1743.56M  free = 1328.44M  (encrypted)
+[2026-09-21T16:40:21Z] end 4a-run_all rc=0
+vm.swapusage: total = 3072.00M  used = 1743.56M  free = 1328.44M  (encrypted)
+[2026-09-21T16:40:21Z] start 4b-smoke: python -m air_llm.run --model /Volumes/USB4_2TBB/Kimi-K3 --manifest /Users/momdad/Documents/GitHub/kimi-k3-mlx-macmini/manifest.jsonl.gz --cache /Users/momdad/k3_dense --mode runtime --resident-gb 8 --max-memory-gb 48 --prompt The capital of France is --max-new-tokens 4 --check-finite --validation-log runs/release-validation-2026-09-21/smoke.jsonl
+vm.swapusage: total = 3072.00M  used = 1743.56M  free = 1328.44M  (encrypted)
+[2026-09-21T16:43:23Z] end 4b-smoke rc=0
+vm.swapusage: total = 3072.00M  used = 1744.19M  free = 1327.81M  (encrypted)
+[2026-09-21T16:43:23Z] start 4c-numerical_modes: python tests/test_numerical_modes.py
+vm.swapusage: total = 3072.00M  used = 1744.19M  free = 1327.81M  (encrypted)
+[2026-09-21T16:44:13Z] end 4c-numerical_modes rc=0
+vm.swapusage: total = 3072.00M  used = 1744.19M  free = 1327.81M  (encrypted)
+[2026-09-21T16:44:13Z] start 4d-full_parity: python tests/test_full_parity.py
+vm.swapusage: total = 3072.00M  used = 1744.19M  free = 1327.81M  (encrypted)
+[2026-09-21T16:54:29Z] end 4d-full_parity rc=0
+vm.swapusage: total = 3072.00M  used = 1746.12M  free = 1325.88M  (encrypted)
+[2026-09-21T16:54:29Z] ALL DONE
+vm.swapusage: total = 3072.00M  used = 1746.12M  free = 1325.88M  (encrypted)

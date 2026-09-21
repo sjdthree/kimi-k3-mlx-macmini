@@ -1,0 +1,22 @@
+==================================================
+  PASS  test_attention_mlx            15.5s
+  PASS  test_k3ref_layers             30.6s
+  PASS  test_kda_prefill_memory        0.4s
+  PASS  test_layer_mlx                18.8s
+  PASS  test_mla_cache                 0.3s
+  PASS  test_mla_quant                 2.1s
+  PASS  test_model_mlx                21.4s
+  PASS  test_moe_mlx                   7.1s
+  PASS  test_mxfp4_kernel              6.4s
+  PASS  test_mxfp4_mlx                 8.2s
+  PASS  test_numerical_modes          48.8s
+  PASS  test_openai_conformance        3.2s
+  PASS  test_resident_cache           15.2s
+  PASS  test_state_roundtrip           1.0s
+  PASS  test_streaming_memory         11.4s
+  PASS  test_synthetic_integration     0.9s
+  PASS  test_token_log                 0.8s
+  PASS  test_tokenizer                 0.4s
+==================================================
+
+18 passed, 0 skipped, 0 failed

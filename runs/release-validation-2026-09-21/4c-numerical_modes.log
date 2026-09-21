@@ -1,0 +1,10 @@
+spec section 13 gate: numerical modes   (device Device(gpu, 0))
+==========================================================================
+  [PASS] prompt (100, 200, 300): greedy tokens identical across modes  validation [95358, 108302, 42648] vs runtime [95358, 108302, 42648]
+  [PASS] prompt (1, 2, 3): greedy tokens identical across modes  validation [83301, 81750, 2047] vs runtime [83301, 81750, 2047]
+  [PASS] prompt (50000, 60000): greedy tokens identical across modes  validation [41524, 85225, 122096] vs runtime [41524, 85225, 122096]
+  [PASS] resident cache does not change greedy tokens  [95358, 108302, 42648] vs [95358, 108302, 42648]
+       resident cache: 65.4% hit rate, 3.36 GiB
+  [PASS] runtime mode is deterministic across processes-equivalent runs  [95358, 108302, 42648] vs [95358, 108302, 42648]
+==========================================================================
+MODES: PASS

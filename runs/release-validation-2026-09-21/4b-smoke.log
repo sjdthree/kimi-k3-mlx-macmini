@@ -1,0 +1,14 @@
+Kimi-K3 / mlx / Device(gpu, 0)
+  checkpoint /Volumes/USB4_2TBB/Kimi-K3
+  93 layers (24 MLA, 69 KDA), 896 experts top-16
+  prompt 5 tokens [1008, 10484, 318, 15383, 387], generating 4 greedy
+  memory ceiling 48.0 GiB | mode runtime (bf16 weights) | resident budget 8.0 GiB
+  [ 0] id=17374      78.6s  read 196.38 GiB  peak 11.47 GiB  experts 17046  state 443 MiB
+  [ 1] id=20829      33.8s  read 119.58 GiB  peak 11.35 GiB  experts 4416  state 443 MiB
+  [ 2] id=10         33.3s  read 119.58 GiB  peak 11.32 GiB  experts 4416  state 443 MiB
+  [ 3] id=427        33.7s  read 119.58 GiB  peak 11.32 GiB  experts 4416  state 444 MiB
+
+generated 4 tokens in 3.0 min (44.8s/token)
+token ids: [17374, 20829, 10, 427]
+continuation: ' Paris.",\n+           '
+full        : 'The capital of France is Paris.",\n+           '

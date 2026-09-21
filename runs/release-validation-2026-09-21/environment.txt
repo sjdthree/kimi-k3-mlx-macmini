@@ -1,0 +1,78 @@
+date: 2026-09-21T16:35:54Z
+commit: 797f0acb98b46027ca4154c43c2e312f8d07e228
+dirty: 0 files
+K3_CKPT=/Volumes/USB4_2TBB/Kimi-K3
+K3_CACHE=/Users/momdad/k3_dense
+K3_REVISION=c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721
+hw.model: Mac16,11
+hw.memsize: 68719476736
+machdep.cpu.brand_string: Apple M4 Pro
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+Python 3.12.12
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+certifi==2026.7.22
+charset-normalizer==3.5.1
+click==8.5.0
+einops==0.8.2
+fastapi==0.141.1
+filelock==4.0.1
+fsspec==2026.9.0
+h11==0.16.0
+httpcore==1.0.9
+httpcore2==2.13.0
+httptools==0.8.0
+httpx==0.28.1
+httpx2==2.13.0
+idna==3.20
+Jinja2==3.1.6
+jiter==0.17.0
+-e git+https://github.com/sjdthree/kimi-k3-mlx-macmini.git@797f0acb98b46027ca4154c43c2e312f8d07e228#egg=kimi_k3_mlx
+MarkupSafe==3.0.3
+mlx==0.29.3
+mlx-metal==0.29.3
+mpmath==1.3.0
+networkx==3.6.1
+numpy==2.2.6
+openai==3.16.2
+prometheus_client==0.26.0
+pydantic==2.13.5
+pydantic_core==2.46.5
+python-dotenv==1.2.3
+PyYAML==6.0.3
+regex==2026.9.10
+requests==2.34.2
+setuptools==84.0.0
+sniffio==1.3.1
+sse-starlette==3.4.11
+starlette==1.6.0
+sympy==1.14.0
+tiktoken==0.14.0
+torch==2.14.0
+truststore==0.10.4
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+urllib3==2.8.0
+uvicorn==0.53.0
+uvloop==0.22.1
+watchfiles==1.3.0
+websockets==17.1
+--- disk
+   File System Personality:   APFS
+   Protocol:                  PCI-Express
+   Disk Size:                 2.0 TB (2000189177856 Bytes) (exactly 3906619488 512-Byte-Units)
+   Device Location:           External
+  |   "Physical Interconnect" = "PCI-Express"
+  |   "Physical Interconnect Location" = "External"
+  |   "Model Number" = "PCIe SSD"
+  |   "Physical Interconnect" = "Apple Fabric"
+  |   "Physical Interconnect Location" = "Internal"
+  |   "Model Number" = "APPLE SSD AP2048Z"
+--- processes
+none
+--- swap before
+vm.swapusage: total = 3072.00M  used = 1743.56M  free = 1328.44M  (encrypted)
+System-wide memory free percentage: 94%
