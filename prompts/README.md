@@ -44,8 +44,9 @@ for ch in c.chat.completions.create(model="chat", max_tokens=2500, stream=True,
 PY
 ```
 
-Use `stream=true` and no client timeout. Disconnecting cancels the generation within
-~1 s, so an abandoned run stops burning disk rather than continuing.
+Use `stream=true` and a long client read timeout (prefill alone can take many minutes).
+Disconnecting cancels the generation at the next token boundary; a token already being
+computed finishes first.
 
 ## Set-and-forget: `tools/run_long_job.py`
 
@@ -54,12 +55,13 @@ which writes every token to disk as it arrives and can resume if anything dies:
 
 ```bash
 # terminal 1 -- the server
-export AIR_LLM_API_KEYS=sk-k3
-python -m air_llm.serve --model /Volumes/USB4_2TBB/Kimi-K3 \
-    --manifest manifest_local.jsonl.gz --cache ~/k3_dense \
-    --mode runtime --resident-gb 8 --port 8080 --max-output-tokens 3000
+export AIR_LLM_API_KEYS="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python -m air_llm.serve --model "$K3_CKPT" --manifest "$K3_MANIFEST" \
+    --cache "$K3_CACHE" --mode runtime --resident-gb 8 --port 8080 \
+    --max-output-tokens 3000
 
-# terminal 2 -- the job
+# terminal 2 -- the job (same key as the server)
+export OPENAI_API_KEY=...
 python tools/run_long_job.py \
     --prompt-file prompts/04_polymath_multi_expert.md \
     --out runs/polymath --max-tokens 2500

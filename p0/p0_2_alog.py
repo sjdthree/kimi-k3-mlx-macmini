@@ -9,9 +9,9 @@ fla's contract (fla/ops/kda/gate.py, fla/layers/kda.py:174-179):
 K3 shapes force HV=96 (b_proj [96,7168], o_norm [128] => head_v_dim=128, v_proj 12288=96*128),
 so fla wants A_log [96]. The checkpoint ships [128]. Test the alternative empirically.
 """
-import json, struct, numpy as np
+import json, os, struct, numpy as np
 
-CKPT = "/Volumes/LLMModels/Kimi-K3/"
+CKPT = os.path.join(os.environ.get("K3_CKPT", "Kimi-K3"), "")
 IDX = json.load(open(CKPT + "model.safetensors.index.json"))["weight_map"]
 
 

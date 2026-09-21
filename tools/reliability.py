@@ -13,7 +13,7 @@ Passing requirements:
 allocator, its compiled-kernel cache, and any accumulated state, which is exactly what a
 leak test must not do. So each run is a real subprocess.
 
-    python tools/reliability.py --model /Volumes/USB4_2TBB/Kimi-K3 --max-new-tokens 16
+    python tools/reliability.py --model "$K3_CKPT" --max-new-tokens 16
     python tools/reliability.py --model /tmp/mini-k3 \
         --manifest /tmp/mini-k3/manifest.jsonl.gz --max-new-tokens 6   # harness self-test
 """

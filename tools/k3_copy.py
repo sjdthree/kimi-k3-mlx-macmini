@@ -1,10 +1,11 @@
 """Copy the Kimi-K3 checkpoint to a local drive, resumably and verifiably.
 
 macOS ships openrsync (protocol 29), which lacks --info=progress2 and friends, so this
-does the job directly: file-at-a-time, skip-if-complete, per-file size verification.
+does the job directly: file-at-a-time, skip-if-complete, per-file size verification
+(or SHA-256 with --sha256).
 
-    python tools/k3_copy.py --dest /Volumes/USB4_2TBB/Kimi-K3
-    python tools/k3_copy.py --dest /Volumes/USB4_2TBB/Kimi-K3 --verify-only
+    python tools/k3_copy.py --src /path/to/source/Kimi-K3 --dest /path/to/fast-ssd/Kimi-K3
+    python tools/k3_copy.py --src ... --dest ... --verify-only --sha256
 """
 from __future__ import annotations
 
@@ -15,7 +16,6 @@ import shutil
 import time
 from pathlib import Path
 
-SRC = Path("/Volumes/LLMModels/Kimi-K3")
 BLOCK = 16 << 20
 
 

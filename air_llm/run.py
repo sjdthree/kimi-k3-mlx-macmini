@@ -1,7 +1,7 @@
 """Spec section 19: the required run interface.
 
     python -m air_llm.run \
-      --model /Volumes/USB4_2TBB/Kimi-K3 \
+      --model "$K3_CKPT" \
       --architecture kimi_k3 \
       --backend mlx \
       --stream-experts \

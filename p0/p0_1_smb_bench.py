@@ -6,7 +6,7 @@ Two workloads that mirror how the streaming runtime will actually read:
 """
 import json, os, random, struct, sys, time
 
-CKPT = "/Volumes/LLMModels/Kimi-K3"
+CKPT = os.environ.get("K3_CKPT", "Kimi-K3")
 random.seed(20260806)
 
 

@@ -6,7 +6,7 @@ If so, N concurrent readers should scale until the ~102 MB/s sequential ceiling.
 import json, os, random, struct, time
 from concurrent.futures import ThreadPoolExecutor
 
-CKPT = "/Volumes/LLMModels/Kimi-K3"
+CKPT = os.environ.get("K3_CKPT", "Kimi-K3")
 random.seed(7)
 
 

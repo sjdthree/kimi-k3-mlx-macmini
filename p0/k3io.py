@@ -1,7 +1,7 @@
 """Minimal safetensors reader for the K3 checkpoint (no torch, no full-shard load)."""
-import json, struct, numpy as np
+import json, os, struct, numpy as np
 
-CKPT = "/Volumes/LLMModels/Kimi-K3/"
+CKPT = os.path.join(os.environ.get("K3_CKPT", "Kimi-K3"), "")
 IDX = json.load(open(CKPT + "model.safetensors.index.json"))["weight_map"]
 _HDR = {}
 

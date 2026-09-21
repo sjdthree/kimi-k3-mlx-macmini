@@ -10,7 +10,7 @@ reported random reads FASTER than sequential, which is impossible and revealed p
 hits. So the test file is sized larger than RAM, and the harness flags the contradiction
 if it reappears.
 
-    python tools/bench_disk.py --path /Volumes/USB4_2TBB/.bench --size-gib 80
+    python tools/bench_disk.py --path /Volumes/YourDrive/.bench --size-gib 80
 """
 from __future__ import annotations
 

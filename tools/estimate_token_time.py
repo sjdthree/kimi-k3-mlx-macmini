@@ -1,16 +1,17 @@
-"""Measure real sec/token by running actual layers off the USB4 drive.
+"""Measure real sec/token by running actual layers off the checkpoint drive.
 
 The copy is partial, but shards land in layer order, so layers 0..N-1 are already
 readable. Running them end-to-end gives a measured per-layer cost -- disk read, host
 conversion, MLX upload, and compute together -- which is what a projection from raw
 os.read throughput cannot capture.
 
-    python tools/estimate_token_time.py --ckpt /Volumes/USB4_2TBB/Kimi-K3
+    python tools/estimate_token_time.py --ckpt "$K3_CKPT"
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -44,8 +45,9 @@ def available_layers(ckpt: Path, manifest: Path, upto: int) -> int:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ckpt", type=Path, default=Path("/Volumes/USB4_2TBB/Kimi-K3"))
-    ap.add_argument("--manifest", type=Path, default=Path("manifest.jsonl.gz"))
+    ap.add_argument("--ckpt", type=Path, default=Path(os.environ.get("K3_CKPT", "Kimi-K3")))
+    ap.add_argument("--manifest", type=Path,
+                    default=Path(os.environ.get("K3_MANIFEST", "manifest.jsonl.gz")))
     ap.add_argument("--mode", default="runtime", choices=["validation", "runtime"])
     ap.add_argument("--resident-gb", type=float, default=0.0)
     ap.add_argument("--cache", type=Path, default=None,
