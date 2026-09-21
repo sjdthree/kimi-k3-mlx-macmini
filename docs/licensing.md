@@ -11,7 +11,7 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | `k3ref/` | Moonshot `modeling_kimi_linear.py` | Kimi K3 License; CPU reference adaptations; exact originating snapshot unrecorded |
 | `air_llm/models/kimi_k3/config.py` | Extracted from the reference adapter | Conservatively retain Moonshot attribution/Kimi terms |
 | `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern; Kimi license notice required |
-| `third_party/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; upstream revision unrecorded |
+| `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; upstream revision unrecorded |
 | `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Human review of adaptation scope; preserve source anchors and both notices |
 | `p0/run_qwen3_mlx.py` | AirLLM classes/streaming prototype | Human review of copied versus imported portions; preserve AirLLM credit |
 | Checkpoint/tokenizer data | Moonshot | Separate download, not redistributed here |
@@ -43,6 +43,6 @@ uses. Do not advertise the entire distribution or model as unrestricted MIT.
 
 Local source hashes below identify current repository content, not upstream origin:
 
-- `third_party/kda_naive.py`: SHA-256 `60a32285d4b67068ff633b48bbe8ab31028066d24f00d27e12199a88fc73f016`
-- `third_party/LICENSE.kimi-k3`: SHA-256 `20c797ce19af0c17de52c6afb144644768a591c521655f5ebf5712c9850f2887`
-- `third_party/LICENSE.flash-linear-attention`: SHA-256 `41a83c8187efc1e3ccc21909e806a9e52338e69448554d9754706c3d1cd610e7`
+- `k3ref/_vendor/kda_naive.py`: SHA-256 `60a32285d4b67068ff633b48bbe8ab31028066d24f00d27e12199a88fc73f016`
+- `licenses/LICENSE.kimi-k3`: SHA-256 `20c797ce19af0c17de52c6afb144644768a591c521655f5ebf5712c9850f2887`
+- `licenses/LICENSE.flash-linear-attention`: SHA-256 `41a83c8187efc1e3ccc21909e806a9e52338e69448554d9754706c3d1cd610e7`

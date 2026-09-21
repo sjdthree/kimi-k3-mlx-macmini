@@ -3,17 +3,17 @@ Copyright (c) 2026 Steve Derezinski
 First-party contributions are MIT unless otherwise identified; see LICENSE.
 This distribution contains separately licensed material and is not uniformly MIT.
 
-1. third_party/kda_naive.py
+1. k3ref/_vendor/kda_naive.py
    Source: fla/ops/kda/naive.py, https://github.com/fla-org/flash-linear-attention
    Copyright (c) 2023-2026 Songlin Yang, Yu Zhang, Zhiyuan Li
-   MIT License; see third_party/LICENSE.flash-linear-attention.
+   MIT License; see licenses/LICENSE.flash-linear-attention.
    Retained as the pure-PyTorch KDA reference kernel. The original upstream revision
    was not recorded; see docs/licensing.md for the provenance review status.
 
 2. k3ref/ and air_llm/models/kimi_k3/config.py
    Derived/adapted from modeling_kimi_linear.py and configuration semantics shipped
    with https://huggingface.co/moonshotai/Kimi-K3, Copyright (c) 2026 Moonshot AI.
-   Kimi K3 License; see third_party/LICENSE.kimi-k3. k3ref replaces CUDA/Triton kernels
+   Kimi K3 License; see licenses/LICENSE.kimi-k3. k3ref replaces CUDA/Triton kernels
    with CPU/PyTorch equivalents for numerical comparisons. config.py was extracted
    from that adapter and is conservatively included in this attribution.
 

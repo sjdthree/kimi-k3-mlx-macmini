@@ -13,8 +13,9 @@ the evidence in hand. Record where that evidence lives next to the box.
 - [ ] `python tools/summarize_evidence.py` reproduces every figure in
       [evidence.md](evidence.md).
 - [ ] Every relative link in the Markdown files resolves.
-- [ ] `python -m pip wheel --no-deps -w dist .` builds, and the wheel contains
-      `LICENSE`, `NOTICE` and `third_party/LICENSE.*`.
+- [ ] From a clean tree (`rm -rf build dist`; a stale `build/` leaks old files into the
+      wheel), `python -m pip wheel --no-deps -w dist .` builds, and the wheel contains
+      `LICENSE`, `NOTICE`, `licenses/LICENSE.*` and `k3ref/_vendor/kda_naive.py`.
 - [ ] CI is green on the commit being released.
 
 ## 2. Full-checkpoint validation (the benchmark machine)
@@ -39,7 +40,7 @@ checkpoint revision (`K3_REVISION`) for every run.
 
 These are decisions, not tests. [licensing.md](licensing.md) has the details.
 
-- [ ] Upstream revisions and hashes recorded for `third_party/kda_naive.py`
+- [ ] Upstream revisions and hashes recorded for `k3ref/_vendor/kda_naive.py`
       (flash-linear-attention), Moonshot's `modeling_kimi_linear.py` (basis of `k3ref/`
       and `config.py`) and `tokenization_kimi.py` (the `PAT_STR` in `tokenizer.py`).
 - [ ] Decision recorded on whether the Kimi K3 License permits publishing `k3ref/`,

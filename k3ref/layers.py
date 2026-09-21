@@ -2,7 +2,7 @@
 
 Derivative work of `modeling_kimi_linear.py` as shipped in the Kimi-K3 checkpoint,
 Copyright (c) 2026 Moonshot AI, used under the Kimi K3 License. The full license text
-is in third_party/LICENSE.kimi-k3; see NOTICE for the attribution trail.
+is in licenses/LICENSE.kimi-k3; see NOTICE for the attribution trail.
 
 This is NOT a reimplementation. It is the shipped `modeling_kimi_linear.py` semantics with
 the two CUDA-only kernels replaced by their pure-torch equivalents:
@@ -31,7 +31,7 @@ import torch.nn.functional as F
 from .weights import CKPT, WeightStore, default_store
 
 # upstream naive KDA, imported by path (fla/__init__ needs triton, which Metal cannot have)
-_FLA_NAIVE = (Path(__file__).resolve().parent.parent / "third_party" / "kda_naive.py")
+_FLA_NAIVE = Path(__file__).resolve().parent / "_vendor" / "kda_naive.py"
 _spec = importlib.util.spec_from_file_location("kda_naive", _FLA_NAIVE)
 kda_naive = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kda_naive)

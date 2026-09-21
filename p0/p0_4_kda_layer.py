@@ -24,7 +24,7 @@ from k3io import load
 
 # The upstream reference, vendored unmodified. This spike originally loaded it from a
 # scratch checkout of flash-linear-attention; it now points at the in-repo copy.
-FLA_NAIVE = Path(__file__).resolve().parent.parent / "third_party" / "kda_naive.py"
+FLA_NAIVE = Path(__file__).resolve().parent.parent / "k3ref" / "_vendor" / "kda_naive.py"
 
 # import upstream naive.py directly (bypasses fla/__init__, which needs triton)
 _spec = importlib.util.spec_from_file_location("kda_naive", str(FLA_NAIVE))

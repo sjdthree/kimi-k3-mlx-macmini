@@ -1,7 +1,7 @@
 """Checkpoint configuration; no MLX or PyTorch imports.
 
 Extracted from the Moonshot-derived reference adapter; see NOTICE and the
-Kimi K3 license in third_party/LICENSE.kimi-k3.
+Kimi K3 license in licenses/LICENSE.kimi-k3.
 """
 import json
 import os
