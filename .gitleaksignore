@@ -1,0 +1,5 @@
+# Reviewed false positives: the generic-api-key rule matches the text `finish_reason=...`.
+daf2bb30e212223a73f948e4148022051adfe401:tests/test_openai_conformance.py:generic-api-key:267
+fd6ce7e09041d13d3f6e330da1dccca8c8ebbfbd:docs/kv-cache/README.md:generic-api-key:278
+docs/kv-cache/README.md:generic-api-key:345
+tests/test_openai_conformance.py:generic-api-key:267

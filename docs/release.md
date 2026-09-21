@@ -55,7 +55,9 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
 ## 4. Repository hygiene before the visibility change
 
 - [ ] History scan: no secrets, keys, tokens, private email addresses or personal data in
-      any reachable commit (`git log --all -p`). A scanner such as `gitleaks` is preferred.
+      any reachable commit: `gitleaks git --log-opts=--all --redact .` and
+      `gitleaks dir --redact .` report no leaks. Reviewed false positives are listed in
+      `.gitleaksignore`; add to it only after reading the match.
 - [ ] No large or unexpected blobs in history
       (`git rev-list --objects --all | git cat-file --batch-check`).
 - [ ] Machine-specific paths remain only in files marked historical and in raw logs.
