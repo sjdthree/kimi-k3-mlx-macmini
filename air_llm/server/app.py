@@ -70,10 +70,11 @@ def require_auth(request: Request) -> tuple[str, KeyPolicy]:
 
 def create_app(engine: Engine | None = None, config: dict | None = None) -> FastAPI:
     app = FastAPI(
-        title="AirLLM OpenAI-compatible API",
+        title="Kimi-K3 MLX local API",
         version="1.0.0",
-        description="OpenAI-compatible facade over the Kimi-K3 MLX backend. "
-                    "This backend is disk-bound: expect ~34 s per generated token.",
+        description="A documented subset of the OpenAI Chat Completions API over the "
+                    "Kimi-K3 MLX backend. Disk-bound: the best recorded decode was "
+                    "~32.4 s per token, and prefill can take many minutes.",
         docs_url="/docs", openapi_url="/openapi.json",
     )
     STATE["engine"] = engine
@@ -341,7 +342,7 @@ async def _stream(eng: Engine, params: GenParams, request: Request, cid: str,
         yield C.DONE
     except Exception:
         log.exception("stream failed rid=%s", request.state.request_id)
-        yield C.sse(E.APIError(500, "Internal server error", type="server_error").envelope())
+        yield C.sse(E.internal_error(request.state.request_id).envelope())
         yield C.DONE
     finally:
         STATE["auth"].leave(kid)

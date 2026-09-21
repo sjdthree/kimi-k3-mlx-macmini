@@ -1,29 +1,34 @@
 # OpenAI-compatible API
 
-An OpenAI-shaped `/v1` facade over the Kimi-K3 MLX backend. Point any OpenAI SDK or
-compatible client at it by setting two variables:
+A local `/v1` server implementing a **documented subset** of the OpenAI Chat Completions
+API over the Kimi-K3 MLX backend. The official OpenAI SDKs work against it by setting two
+variables, within the limits in the compatibility matrix below:
 
 ```bash
 export OPENAI_BASE_URL=http://localhost:8000/v1
-export OPENAI_API_KEY=sk-your-key
+export OPENAI_API_KEY="$AIR_LLM_API_KEYS"      # the key the server was started with
 ```
 
-No SDK fork, no shim. OpenAPI spec: [`openapi.json`](openapi.json).
+OpenAPI spec: [`openapi.json`](openapi.json) (the test suite checks it matches the
+served spec). No public hosting, TLS, or production hardening is claimed.
 
 ---
 
 ## Read this first: the backend is disk-bound
 
-**~34 s per generated token; ~70–90 s to first token.** This is not a tuning gap — a
-decode step streams ~95.6 GiB of weights for a 2.8-trillion-parameter MoE. It has direct
-consequences for clients:
+**The best recorded decode was ~32.4 s per token, and prefill takes minutes**: a
+295-token prompt took ~9 minutes to first token, a 1,959-token prompt ~26 minutes. These
+are historical measurements on one 64 GiB M4 Pro Mac mini ([evidence](evidence.md)), not
+guarantees for your machine. Every decode step requests roughly 96–120 GiB of weights
+(logical bytes, depending on the resident budget), so the cost is not a tuning gap. It
+has direct consequences for clients:
 
 | | implication |
 |---|---|
-| **Client timeouts** | Defaults of 30–120 s expire before the first token. Set ≥ 900 s. |
+| **Client timeouts** | Defaults of 30–120 s expire before the first token. Set at least the expected prefill time — 1,800 s or more for long prompts. |
 | **Streaming** | Strongly preferred. With `stream=false` a client sees nothing for minutes. |
 | **Concurrency** | One generation at a time. Concurrent requests queue, then 429. Parallelism makes throughput *worse* — the disk is the contended resource. |
-| **`n > 1`** | Multiplies wall-clock linearly. Capped by `--max-n` (default 1). |
+| **`n > 1`** | Not supported; only `n=1` is accepted. |
 | **Chat UIs** | Open WebUI and similar work, but need their request timeout raised. |
 | **Coding agents** | A 1k–10k-token task is 9–94 hours. Not practical today. |
 
@@ -32,7 +37,9 @@ The per-token estimate is advertised in model metadata as
 
 ## Compatibility matrix
 
-Model: `kimi-k3-2026-07-16` (aliases: `chat`, `reasoning`, `kimi-k3`)
+Model: `kimi-k3-local` (aliases: `chat`, `reasoning`, `kimi-k3`, and the legacy
+`kimi-k3-2026-07-16`). The advertised `context_length` of 8192 is a configuration limit,
+not a validated capacity; the longest recorded run had a ~2k-token context.
 
 | Feature | Supported | Notes |
 |---|---|---|
@@ -42,11 +49,11 @@ Model: `kimi-k3-2026-07-16` (aliases: `chat`, `reasoning`, `kimi-k3`)
 | Client-disconnect cancellation | ✅ | Registers ≤ 1 s; generation stops at the next token boundary |
 | `temperature`, `top_p`, `seed` | ✅ | `temperature=0` is exact greedy and reproducible |
 | `max_tokens` / `max_completion_tokens` | ✅ | Both accepted; capped server-side |
-| `stop` | ✅ | String or array; output trimmed at the match |
-| `logprobs`, `top_logprobs` | ✅ | From the unmodified distribution, pre-temperature |
-| `logit_bias` | ✅ | Token-id keys |
+| `stop` | ✅ | String or up to four non-empty strings. Matched across token boundaries and trimmed before any text is sent; not combinable with `logprobs` |
+| `logprobs`, `top_logprobs` | ✅ | From the unmodified distribution, pre-temperature. `bytes` are the token's raw bytes, which may be a partial UTF-8 sequence |
+| `logit_bias` | ✅ | Non-negative token-id keys, values in −100…100 |
 | `user` | ✅ | Recorded for attribution, never logged with content |
-| `n` | ⚠️ | Accepted up to `--max-n` (default 1); each choice is a full generation |
+| `n` | ⚠️ | Only `n=1`; any other value returns 400 `invalid_value` |
 | Multi-turn, `system`/`developer`, named messages | ✅ | Rendered into a plain template — see Deviations |
 | **`tools` / function calling** | ❌ | **No constrained decoding.** Returns 400 `unsupported_capability` |
 | **`response_format: json_schema`** | ❌ | Cannot enforce a schema; returns 400 rather than claiming conformance |
@@ -54,6 +61,8 @@ Model: `kimi-k3-2026-07-16` (aliases: `chat`, `reasoning`, `kimi-k3`)
 | **Vision / image parts** | ❌ | Checkpoint ships MoonViT; not implemented |
 | **`/v1/embeddings`** | ❌ | No embedding model deployed. Returns 404; never routed to a chat model |
 | `presence_penalty`, `frequency_penalty` | ❌ | 400 `unsupported_parameter` — they would change sampling, so they are not silently ignored |
+| Unknown request fields, `extra_body` | ❌ | 400 `unsupported_parameter` rather than silently ignored |
+| Unknown message content part types | ❌ | 400 `unsupported_capability` |
 | `/v1/completions` (legacy) | ❌ | 404. Use chat completions |
 | `/v1/responses` | ❌ | 404. Additive, not implemented in this release |
 
@@ -77,10 +86,13 @@ curl $OPENAI_BASE_URL/chat/completions \
 ### Python
 
 ```python
+import os
+
 from openai import OpenAI
 
-client = OpenAI(base_url="http://localhost:8000/v1", api_key="sk-your-key",
-                timeout=1800.0)          # required: ~32 s/token
+client = OpenAI(base_url="http://localhost:8000/v1",
+                api_key=os.environ["OPENAI_API_KEY"],
+                timeout=1800.0)          # prefill alone can take many minutes
 
 for chunk in client.chat.completions.create(
         model="chat",
@@ -113,13 +125,12 @@ for await (const chunk of stream) process.stdout.write(chunk.choices[0]?.delta?.
 
 ## Model naming and versioning
 
-* **Aliases** — `chat`, `reasoning`, `kimi-k3`. Stable names; the target may change.
-  Use when you want "whatever is best for this job".
-* **Physical IDs** — `kimi-k3-2026-07-16`. Immutable. The same ID always means the same
-  weights; different weights get a different ID. Use for reproducibility.
-
-Deprecation policy: an alias may be repointed with notice; a physical ID is never
-repointed or reused. Both appear as selectable entries in `GET /v1/models`.
+`kimi-k3-local` and its aliases are labels for whatever checkpoint this server was
+started with. They **do not attest checkpoint identity**: the server does not verify
+which upstream revision is on disk. For reproducible results, record the checkpoint
+revision and the manifest's config/index hashes alongside your outputs (see
+[INSTALL.md](../INSTALL.md)). `kimi-k3-2026-07-16` remains as an alias so older clients
+keep working; it names no particular snapshot.
 
 ## Errors
 
@@ -134,7 +145,7 @@ Standard OpenAI envelope, standard status codes:
 |---|---|---|
 | 400 | malformed, or a parameter we cannot honour | `unsupported_capability`, `unsupported_parameter`, `invalid_value` |
 | 401 | missing/invalid key | `invalid_api_key` |
-| 403 | quota exhausted | `insufficient_quota` |
+| 403 | daily quota exhausted, or `max_tokens` exceeds what remains of it | `insufficient_quota` |
 | 404 | unknown model or endpoint | `model_not_found`, `endpoint_not_found` |
 | 413 | input over the token/byte limit | `request_too_large` |
 | 429 | busy, rate limit, or concurrency limit | `server_overloaded`, `rate_limit_exceeded`, `concurrency_limit_exceeded` |
@@ -157,15 +168,8 @@ never blocks a performance feature:
 | `GET /native/v1/engine` | readiness, active/completed/cancelled, cache stats, uptime |
 | `GET /native/v1/storage` | resident weight bytes, tensor count, hit rate, cache policy |
 
-Per-request native options use an explicit opt-in that leaves the standard request valid
-and portable:
-
-```json
-{"model": "chat", "messages": [...],
- "extra_body": {"air_llm": {"priority": "interactive"}}}
-```
-
-Standard responses carry no un-namespaced extra fields — asserted by the conformance
+There are no per-request native options; a request carrying `extra_body` or any other
+unknown field is rejected. Standard responses carry no un-namespaced extra fields — asserted by the conformance
 suite. Model metadata lives under an `air_llm` block on the model object.
 
 ## Operations
@@ -185,7 +189,9 @@ Labels are `endpoint`, `model`, `code`, and a **hashed** `key_id`. Raw API keys 
 appear in logs or metrics, and prompt/completion content is never logged.
 
 Configuration: `AIR_LLM_API_KEYS` (comma-separated) or `AIR_LLM_API_KEYS_FILE` for
-per-key `rpm`, `concurrency`, `max_output_tokens`, and `daily_tokens`. Set
+per-key `rpm`, `concurrency`, `max_output_tokens`, and `daily_tokens`. A request's
+`max_tokens` is charged against `daily_tokens` when it starts, so a request that could
+overrun the remaining quota is refused up front. Set
 `AIR_LLM_ALLOW_ANONYMOUS=1` to explicitly disable auth for local use — the server refuses
 to start with no keys and no explicit opt-out.
 
@@ -204,16 +210,17 @@ to start with no keys and no explicit opt-out.
 ## Running
 
 ```bash
-export AIR_LLM_API_KEYS=sk-your-key
+export AIR_LLM_API_KEYS="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
 python -m air_llm.serve \
-  --model /path/to/Kimi-K3 --manifest manifest.jsonl.gz \
-  --cache ~/k3_dense --mode runtime --resident-gb 8 \
+  --model "$K3_CKPT" --manifest "$K3_MANIFEST" \
+  --cache "$K3_CACHE" --mode runtime --resident-gb 8 \
   --port 8000 --max-output-tokens 256
 ```
 
-The model loads once and stays resident, so the pinned weight cache is populated by the
-first request and **warm for every one after it** — unlike the CLI, which re-populates per
-invocation. Measured: 24 GiB resident held across requests with the hit rate climbing.
+Omit `--cache` if you did not stage dense weights. The server binds to loopback by
+default. The model loads once and stays loaded, so the pinned dense weights are
+populated by the first request and stay warm for later ones — unlike the CLI, which
+re-populates them per invocation.
 
 For HTTP-surface work without waiting on the model:
 
@@ -224,7 +231,10 @@ AIR_LLM_ALLOW_ANONYMOUS=1 python -m air_llm.serve --mock --port 8000
 ## Conformance
 
 `tests/test_openai_conformance.py` runs the **official OpenAI Python SDK** against the
-server (29 checks, ~10 s on the mock engine): SDK construction with only `base_url` and
+server (42 checks, seconds on the mock engine): SDK construction with only `base_url` and
 `api_key`, model listing, non-streaming and streaming shapes, raw SSE framing and `[DONE]`,
-`include_usage`, disconnect cancellation, the full error taxonomy, logprobs, no internal
-leakage, no un-namespaced response fields, and the published OpenAPI document.
+`include_usage`, disconnect cancellation, the error taxonomy, logprobs and their bytes,
+stop strings split across tokens, the rejections listed above, quota reservation, no
+internal leakage, no un-namespaced response fields, and that `openapi.json` matches the
+served spec. It exercises the HTTP layer against a mock engine; it is not evidence of
+complete OpenAI API conformance or of model quality.

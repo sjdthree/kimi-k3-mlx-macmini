@@ -90,8 +90,8 @@ def main():
     # ---- 2. models.list
     models = client.models.list()
     ids = {m.id for m in models.data}
-    check("2. models.list() returns aliases and physical ids",
-          {"chat", "reasoning", "kimi-k3-2026-07-16"} <= ids, f"{sorted(ids)}")
+    check("2. models.list() returns the deployment id and its aliases",
+          {"kimi-k3-local", "chat", "reasoning", "kimi-k3"} <= ids, f"{sorted(ids)}")
     raw = httpx.get(f"{BASE}/v1/models",
                     headers={"Authorization": "Bearer sk-test-key"}).json()
     caps = next(d["air_llm"]["capabilities"] for d in raw["data"] if d["id"] == "chat")
@@ -257,6 +257,66 @@ def main():
           and len(lp.content[0].top_logprobs) == 2,
           f"{len(lp.content) if lp else 0} entries")
 
+    check("    logprob bytes are the token's raw UTF-8 bytes",
+          all(c.bytes == list(c.token.encode()) for c in lp.content))
+
+    # ---- stop strings: matched across token boundaries, never partially emitted.
+    # The mock emits " fox", " stops", " over", " the", ...; "s ov" spans two tokens.
+    rs = client.chat.completions.create(
+        model="chat", messages=base_msg, max_tokens=8, stop=["s ov"])
+    check("    stop spanning two tokens trims there, finish_reason=stop",
+          rs.choices[0].message.content == " fox stop"
+          and rs.choices[0].finish_reason == "stop",
+          f"{rs.choices[0].message.content!r} {rs.choices[0].finish_reason}")
+    streamed = "".join(
+        ch.choices[0].delta.content or "" for ch in client.chat.completions.create(
+            model="chat", messages=base_msg, max_tokens=8, stop=["s ov"], stream=True)
+        if ch.choices)
+    check("    streamed text never includes a partial stop match", streamed == " fox stop",
+          f"{streamed!r}")
+
+    # ---- requests the backend cannot honour exactly are refused, not approximated
+    expect_error("    unknown request field -> unsupported_parameter",
+                 {"model": "chat", "messages": base_msg, "not_a_field": 1},
+                 "not_a_field", "unsupported_parameter")
+    expect_error("    extra_body -> unsupported_parameter",
+                 {"model": "chat", "messages": base_msg,
+                  "extra_body": {"air_llm": {"priority": "interactive"}}},
+                 "extra_body", "unsupported_parameter")
+    expect_error("    n=2 -> invalid_value",
+                 {"model": "chat", "messages": base_msg, "n": 2}, "n", "invalid_value")
+    expect_error("    stop with logprobs -> unsupported_parameter",
+                 {"model": "chat", "messages": base_msg, "stop": ["x"], "logprobs": True},
+                 "logprobs", "unsupported_parameter")
+    expect_error("    five stop strings -> 400",
+                 {"model": "chat", "messages": base_msg, "stop": list("abcde")},
+                 "stop", None)
+    expect_error("    unknown content part type -> unsupported_capability",
+                 {"model": "chat",
+                  "messages": [{"role": "user", "content": [{"type": "file", "x": 1}]}]},
+                 "messages[].content", "unsupported_capability")
+
+    # ---- a UTF-8 character split across two tokens is emitted once, whole
+    from air_llm.server.engine import TextFilter
+    tf = TextFilter([])
+    parts = [tf.feed(b"\xe2\x82"), tf.feed(b"\xac!"), tf.finish()]
+    check("    multibyte character split across tokens decodes intact",
+          parts == ["", "€!", ""], f"{parts}")
+
+    # ---- daily quota is reserved up front, so a request cannot overrun it
+    from air_llm.server.auth import Auth, KeyPolicy
+    from air_llm.server.errors import APIError
+    quota = Auth()
+    policy = KeyPolicy(daily_tokens=10)
+    quota.enter("key_q", policy, 8)
+    quota.leave("key_q")
+    try:
+        quota.enter("key_q", policy, 8)
+        check("    request over the remaining daily quota -> 403", False, "admitted")
+    except APIError as e:
+        check("    request over the remaining daily quota -> 403 insufficient_quota",
+              e.status == 403 and e.code == "insufficient_quota")
+
     # ---- operational endpoints outside /v1
     check("    /healthz outside the /v1 namespace",
           httpx.get(f"{BASE}/healthz").status_code == 200)
@@ -287,6 +347,10 @@ def main():
     check("    OpenAPI spec published with the documented paths",
           {"/v1/chat/completions", "/v1/models"} <= set(spec["paths"]),
           f"{len(spec['paths'])} paths")
+    published = json.loads((Path(__file__).resolve().parent.parent / "docs" / "openapi.json")
+                           .read_text())
+    check("    docs/openapi.json matches the served spec (regenerate if this fails)",
+          published == spec)
 
     print("=" * 72)
     print(f"CONFORMANCE: {'PASS' if FAILS == 0 else f'FAIL ({FAILS})'}")

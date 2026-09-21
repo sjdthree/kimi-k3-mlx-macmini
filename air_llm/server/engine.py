@@ -321,10 +321,6 @@ class Engine:
         return {i for n, i in sp.items() if n in ("[EOS]", "<|end_of_msg|>")}
 
     @staticmethod
-    def _hit_stop(text: str, stops: list[str]) -> bool:
-        return any(s and s in text for s in stops)
-
-    @staticmethod
     def trim_at_stop(text: str, stops: list[str]) -> str:
         cut = len(text)
         for s in stops:
