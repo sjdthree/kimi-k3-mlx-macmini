@@ -57,7 +57,7 @@ class ServedModel:
 
 K3 = ServedModel(
     id="kimi-k3-local",
-    aliases=("chat", "reasoning", "kimi-k3", "kimi-k3-2026-07-16"),
+    aliases=("chat", "reasoning", "kimi-k3"),
     description="Kimi-K3, 2.8T-parameter MoE (896 experts, top-16), 93 layers, "
                 "streamed from disk on Apple Silicon via MLX.",
     capabilities=Capabilities(

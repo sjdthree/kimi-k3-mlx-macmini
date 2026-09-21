@@ -37,8 +37,7 @@ The per-token estimate is advertised in model metadata as
 
 ## Compatibility matrix
 
-Model: `kimi-k3-local` (aliases: `chat`, `reasoning`, `kimi-k3`, and the legacy
-`kimi-k3-2026-07-16`). The advertised `context_length` of 8192 is a configuration limit,
+Model: `kimi-k3-local` (aliases: `chat`, `reasoning`, `kimi-k3`). The advertised `context_length` of 8192 is a configuration limit,
 not a validated capacity; the longest recorded run had a ~2k-token context.
 
 | Feature | Supported | Notes |
@@ -129,8 +128,7 @@ for await (const chunk of stream) process.stdout.write(chunk.choices[0]?.delta?.
 started with. They **do not attest checkpoint identity**: the server does not verify
 which upstream revision is on disk. For reproducible results, record the checkpoint
 revision and the manifest's config/index hashes alongside your outputs (see
-[INSTALL.md](../INSTALL.md)). `kimi-k3-2026-07-16` remains as an alias so older clients
-keep working; it names no particular snapshot.
+[INSTALL.md](../INSTALL.md)).
 
 ## Errors
 

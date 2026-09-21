@@ -13,7 +13,7 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern (confirmed by diff); Kimi license notice required |
 | `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; byte-identical to upstream (see below) |
 | `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Human review of adaptation scope; preserve source anchors and both notices |
-| `p0/run_qwen3_mlx.py` | Imports AirLLM; adapts its `Attention`/`TransformerBlock` from `airllm_llama_mlx.py` | **Apache License 2.0** (not MIT). Needs the Apache text and a modification notice, or exclusion from the release |
+| `p0/run_qwen3_mlx.py` (removed) | Adapted AirLLM's `Attention`/`TransformerBlock` (Apache License 2.0) | Removed before release; Qwen/GLM work moved to a separate repository. Still reachable in git history |
 | Checkpoint/tokenizer data | Moonshot | Separate download, not redistributed here |
 
 Sources: [Kimi model/license](https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE),
@@ -44,11 +44,12 @@ this project follows the repository. Do not vendor a copy of the article.
   upstream LICENSE is identical to `licenses/LICENSE.kimi-k3`.
 - **AirLLM.** Apache License 2.0 in every revision (`LICENSE` and `air_llm/LICENSE`),
   declared as Apache in `setup.py`, with no NOTICE file and no filled-in copyright
-  line. The adapted code in `p0/run_qwen3_mlx.py` itself follows Apple's
-  `mlx-examples/llms/llama/llama.py` (MIT, Copyright © 2023 Apple Inc.).
-- **Date discrepancy.** Project notes and the API alias `kimi-k3-2026-07-16` imply a
-  download from 2026-07-16, but the first public Hugging Face commit is 2026-07-27. The
-  content is identical in either case; the date on the alias is unexplained.
+  line. The only file that adapted AirLLM code, `p0/run_qwen3_mlx.py`, was removed
+  before release. `p0/validate_mlx.py` imports AirLLM but copies none of its code.
+- **Date discrepancy.** Project notes and a former API alias `kimi-k3-2026-07-16` implied
+  a download from 2026-07-16, but the first public Hugging Face commit is 2026-07-27, and
+  the benchmark machine's copy of the checkpoint has file dates of 2026-07-27. The content
+  is identical in either case. The alias was removed before release.
 
 The checked-in Kimi license has conditional commercial provisions, including
 model-as-a-service revenue and certain branding conditions. Have a human assess their

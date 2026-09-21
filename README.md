@@ -96,3 +96,10 @@ License**; the vendored FLA reference kernel is MIT with its upstream notice. Th
 model weights are separately licensed and are not distributed here. Read
 [NOTICE](NOTICE) and [the provenance inventory](docs/licensing.md); the distribution
 must not be represented as uniformly MIT.
+
+The Kimi K3 License is permissive, but its sections 2 and 3 add conditions for large
+commercial deployments. A model-as-a-service business with more than US$20 million
+revenue over 12 months needs a separate agreement with Moonshot AI. A product with more
+than 100 million monthly active users or US$20 million monthly revenue must display
+"Kimi K3" prominently. Read [the license](licenses/LICENSE.kimi-k3) before commercial use.
+This summary is not legal advice.

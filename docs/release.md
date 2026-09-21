@@ -49,7 +49,8 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
       `config.py` and the tokenizer pattern here, including its commercial and branding
       conditions.
 - [ ] `p0/run_qwen3_mlx.py` (AirLLM-derived) and `p0/p0_4_kda_layer.py` (Moonshot/FLA
-      operations) reviewed: notices added, or the files removed.
+      operations) reviewed: notices added, or the files removed. `run_qwen3_mlx.py`
+      removed 2026-09-21; `p0_4_kda_layer.py` still to review.
 - [ ] README credit links to the canonical URL of Gavin Li's Kimi-K3 article.
 - [ ] README, NOTICE, `pyproject.toml` and the wheel all describe the distribution as
       mixed-license, never as uniformly MIT.
