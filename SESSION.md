@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # Session state — 2026-08-07, updated 2026-08-09
 
 > **Archived working notes.** This is the author's live scratchpad as it stood on

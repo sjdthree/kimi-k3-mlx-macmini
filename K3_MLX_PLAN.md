@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # Implementation Plan — Kimi-K3 on Apple Silicon (MLX)
 
 Plan for executing `apple_si_kimik3.md`. Written 2026-08-06 after re-verifying the spec against the

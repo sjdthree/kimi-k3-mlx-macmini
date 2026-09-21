@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # P0 Feasibility Spike — Results (2026-08-06)
 
 Gates defined in `K3_MLX_PLAN.md` §7. Scripts in `p0/`. Env: conda `airllm`, arm64 Python 3.12.13.

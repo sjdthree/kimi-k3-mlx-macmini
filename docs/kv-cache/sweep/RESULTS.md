@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](../../evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # `--resident-gb` sweep — 2026-08-10
 
 Prompt 04 (291 tokens), 40 generated tokens per config, decode context 296–334. Only

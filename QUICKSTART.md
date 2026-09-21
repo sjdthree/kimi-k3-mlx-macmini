@@ -1,149 +1,31 @@
-# Quick Start
+# Quick start
 
-From a checkout to a generated token. Assumes the Kimi-K3 checkpoint is already on
-local storage. If not, or if anything below fails, see [INSTALL.md](INSTALL.md).
+Start with the checkpoint-free synthetic smoke test:
 
-**Time:** ~5 minutes of setup, then ~35 s per generated token.
-
----
-
-## 1. Environment (2 min)
-
-The model itself needs only **MLX and NumPy**. Torch is required solely for the
-correctness oracle.
-
-```bash
-conda create -n airllm python=3.12 -y && conda activate airllm
-pip install -e .        # mlx, numpy, tiktoken
+```sh
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -c constraints-test.txt -e '.[dev]'
+python tests/test_synthetic_integration.py
+python tests/run_all.py
 ```
 
-Verify MLX sees the GPU:
+Requires Apple Silicon, GPU access, macOS 15+, and Python 3.11/3.12. Synthetic outputs
+are random-model tokens, not a language-quality demo. Missing-checkpoint suites skip.
 
-```bash
-python -c "import mlx.core as mx; print(mx.default_device())"
-# -> Device(gpu, 0)
+For the full 93-layer text model, first complete [INSTALL.md](INSTALL.md): obtain the
+~1.42 TiB upstream snapshot, record its revision, build and verify the manifest, and
+optionally stage dense weights. Then, from the repository root:
+
+```sh
+export K3_CKPT=/path/to/fast-ssd/Kimi-K3
+export K3_MANIFEST="$PWD/manifest.jsonl.gz"
+python -m air_llm.run --model "$K3_CKPT" --manifest "$K3_MANIFEST" \
+  --mode runtime --resident-gb 8 --max-memory-gb 48 \
+  --prompt 'The capital of France is' --max-new-tokens 4 --check-finite
 ```
 
-## 2. Index the checkpoint (~8 s)
-
-```bash
-python tools/k3_manifest.py build  --ckpt /path/to/Kimi-K3 --out manifest.jsonl.gz
-python tools/k3_manifest.py verify --ckpt /path/to/Kimi-K3
-```
-
-Expect `M1 verify: PASS` and 15 green checks over 497,220 tensors. If any fail, the
-checkpoint is incomplete or corrupt — stop here, don't run the model.
-
-## 3. Generate
-
-```bash
-python -m air_llm.run \
-  --model /path/to/Kimi-K3 \
-  --mode runtime \
-  --prompt "The capital of France is" \
-  --max-new-tokens 4
-```
-
-```
-93 layers (24 MLA, 69 KDA), 896 experts top-16
-[ 0] id=17374   72.9s  read 196.46 GiB  peak 35.49 GiB  experts 17061
-[ 1] id=20829   34.8s  read  95.57 GiB  peak 36.21 GiB  experts  4416
-full: 'The capital of France is Paris.'
-```
-
-The first token is slower — that's prefill, where every prompt token routes
-independently (17,061 expert projections vs 4,416 for a decode step).
-
----
-
-## Make it ~1.6× faster (5 min, worth it)
-
-~96% of a token is disk I/O, and 81% of that is **dense weights, identical on every
-token**. Two changes attack exactly that.
-
-### Stage dense weights on your fastest disk (105.7 GiB)
-
-```bash
-python tools/k3_cache.py --src /path/to/Kimi-K3 --dest ~/k3_dense \
-    --layers 0-92 --expert-layers ""
-```
-
-Takes ~35 s at 3.5 GB/s. Then pass `--cache ~/k3_dense`. If your checkpoint is on an
-external drive and you have an internal SSD with 106 GiB free, this alone is ~1.25×.
-
-### Pin a *small* amount in RAM
-
-```bash
-python -m air_llm.run --model /path/to/Kimi-K3 --cache ~/k3_dense \
-  --mode runtime --resident-gb 8 \
-  --prompt "The capital of France is" --max-new-tokens 16
-```
-
-`--resident-gb` holds that many GiB of dense weights in unified memory permanently, and
-**lower is faster** — the opposite of what it looks like. Measured on a 64 GiB machine,
-changing nothing but this flag:
-
-| `--resident-gb` | s/token | cache hit rate | disk throughput |
-|---:|---:|---:|---:|
-| **8** | **32.4** | 0.098 | **3.70 GiB/s** |
-| 16 | 32.8 | 0.191 | 3.40 GiB/s |
-| 24 | 33.2 | 0.237 | 3.12 GiB/s |
-| 32 | 42.4 | 0.345 | 2.25 GiB/s |
-| 40 | 69.0 | 0.426 | 1.27 GiB/s |
-
-Monotonic: a higher hit rate and worse throughput at every step. Pinning takes unified
-memory permanently away from the OS page cache, which is what actually serves the
-105.7 GiB working set — and a miss served from page cache beats a hit served from swap.
-Start at 8 and only raise it if you measure an improvement.
-
-(Earlier versions of this guide recommended 32, from measurements taken before the KV
-cache was rewritten. The sweep above is post-rewrite and reverses that advice; the
-reasoning is in [docs/kv-cache/](docs/kv-cache/README.md).)
-
-| configuration | s/token |
-|---|---:|
-| checkpoint on external NVMe | 54 |
-| `+ --cache` (dense on internal SSD) | 44 |
-| `+ --resident-gb 8` and the latent KV cache | **32** |
-
----
-
-## Useful flags
-
-| flag | why |
-|---|---|
-| `--mode validation` | fp32 weights, unfused kernels — for parity work. Same greedy tokens, ~2× slower. |
-| `--prompt-tokens 1,2,3` | skip the tokenizer entirely |
-| `--layers N` | run only the first N layers (fast smoke test) |
-| `--check-finite` | assert no NaN/inf in states, routing weights, logits (costs a sync per layer) |
-| `--validation-log run.jsonl` | per-token JSON: timing, bytes read, peak memory, experts, checksum |
-| `--max-memory-gb N` | abort if peak exceeds N (default 48) |
-
-## Verify your install is correct
-
-```bash
-pip install -e '.[oracle]'                     # oracle-only dependencies (torch, einops)
-python tests/test_synthetic_integration.py      # ~30 s, needs no checkpoint
-python tests/test_mxfp4_mlx.py                  # MXFP4 decode vs oracle
-```
-
-The synthetic test builds a 2.7 MB miniature K3 and runs all six execution paths
-(eager, layer streaming, expert streaming, standard kernels, fused kernels, saved-state
-continuation), asserting they produce identical output. It's the fastest end-to-end
-confidence check and needs no checkpoint at all.
-
-## If it's slow
-
-Check the disk, in this order:
-
-1. **External enclosure on the wrong port.** A USB4/Thunderbolt enclosure in a
-   10 Gbps USB-C port runs at ~1 GB/s instead of ~3.9 GB/s — **3.6× slower**, silently.
-   Verify: `ioreg -rc IONVMeController | grep "Model Number"` should show your drive.
-   If it instead appears under `ioreg -rc IOUSBHostDevice`, it's in USB fallback mode —
-   move it to a rear Thunderbolt port and use the cable that shipped with it.
-2. **Network storage will not work.** Measured 45 MB/s on the 5 MiB random reads this
-   workload depends on → ~10 min/token. Copy the checkpoint locally
-   (`tools/k3_copy.py`).
-3. **Spotlight indexing the checkpoint:** `sudo mdutil -i off /Volumes/<drive>`.
-
-Full troubleshooting in [INSTALL.md](INSTALL.md#troubleshooting).
+The recorded hardware had 64 GiB unified memory. This run may take several minutes.
+The best historical ~32.4 s/token excludes prefill; ~15 GiB is MLX allocator memory,
+not whole-process/system usage. The checkpoint includes a vision tower that this
+text-only implementation does not execute. [Measurement scope](docs/evidence.md).

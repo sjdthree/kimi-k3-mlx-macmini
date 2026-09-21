@@ -30,3 +30,17 @@ env/
 # Long-job run artifacts. In flux while a job is generating; commit a finished
 # run deliberately with `git add -f runs/<name>/output.txt` if it is worth keeping.
 runs/
+
+# Release hygiene: local secrets, checkpoints, packages and partial downloads.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.safetensors
+*.npz
+*.part
+checkpoints/
+build/
+dist/
+*.egg-info/

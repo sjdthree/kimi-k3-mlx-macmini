@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # Kimi-K3 on Apple Silicon — Milestone Status
 
 > **Point-in-time record, 2026-08-06.** The engineering log through milestone 11, left

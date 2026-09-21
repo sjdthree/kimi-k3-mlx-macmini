@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](../evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # KV cache: before / after
 
 Comparison record for the MLA latent-cache change (branch `mla-latent-cache`).

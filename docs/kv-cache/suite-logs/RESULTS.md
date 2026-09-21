@@ -1,3 +1,8 @@
+> **Historical engineering record — not current release guidance.**
+> This document preserves earlier hypotheses, commands, and measurements. Some were
+> superseded or overstated. See [the corrected evidence ledger](../../evidence.md) and
+> the root README for current installation, claim scope, and release limitations.
+
 # Full suite on `mla-latent-cache` — 2026-08-10 06:10 → 07:07
 
 All 19 test files, run with the checkpoint volume free.

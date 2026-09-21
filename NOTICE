@@ -1,30 +1,41 @@
 Kimi-K3 on Apple Silicon (MLX)
 Copyright (c) 2026 Steve Derezinski
-Licensed under the MIT License; see LICENSE.
-
-This product includes third-party material, licensed separately:
+First-party contributions are MIT unless otherwise identified; see LICENSE.
+This distribution contains separately licensed material and is not uniformly MIT.
 
 1. third_party/kda_naive.py
-   `fla/ops/kda/naive.py` from flash-linear-attention
-   https://github.com/fla-org/flash-linear-attention
+   Source: fla/ops/kda/naive.py, https://github.com/fla-org/flash-linear-attention
    Copyright (c) 2023-2026 Songlin Yang, Yu Zhang, Zhiyuan Li
-   MIT License -- full text in third_party/LICENSE.flash-linear-attention
-   Vendored unmodified as the KDA reference kernel.
+   MIT License; see third_party/LICENSE.flash-linear-attention.
+   Retained as the pure-PyTorch KDA reference kernel. The original upstream revision
+   was not recorded; see docs/licensing.md for the provenance review status.
 
-2. k3ref/
-   Derived from `modeling_kimi_linear.py` as shipped in the Kimi-K3 checkpoint
-   https://huggingface.co/moonshotai/Kimi-K3
-   Copyright (c) 2026 Moonshot AI
-   Kimi K3 License -- full text in third_party/LICENSE.kimi-k3
-   k3ref reproduces the semantics of the shipped modeling code with the two
-   CUDA-only kernels replaced by pure-torch equivalents, for use as a numerical
-   parity oracle. It is a derivative work of that code.
+2. k3ref/ and air_llm/models/kimi_k3/config.py
+   Derived/adapted from modeling_kimi_linear.py and configuration semantics shipped
+   with https://huggingface.co/moonshotai/Kimi-K3, Copyright (c) 2026 Moonshot AI.
+   Kimi K3 License; see third_party/LICENSE.kimi-k3. k3ref replaces CUDA/Triton kernels
+   with CPU/PyTorch equivalents for numerical comparisons. config.py was extracted
+   from that adapter and is conservatively included in this attribution.
 
-3. air_llm/
-   An independent from-scratch MLX implementation of the Kimi-K3 architecture.
-   It contains no Moonshot AI code, but was written against the published
-   architecture and validated against k3ref. The per-expert disk-streaming
-   approach follows AirLLM (MIT), https://github.com/lyogavin/airllm.
+3. air_llm/models/kimi_k3/tokenizer.py
+   PAT_STR is transcribed from Moonshot's tokenization_kimi.py (source lines 54-63
+   recorded in the file). That copied portion is covered by the Kimi K3 License,
+   not a claim of independent MIT authorship. The surrounding adapter is project work.
 
-Kimi-K3 model weights are distributed by Moonshot AI under the Kimi K3 License
-and are not included in this repository.
+4. air_llm/ implementation and p0/ experiments
+   The native MLX/Metal implementation follows Kimi architecture semantics. Source
+   anchors identify Moonshot and flash-linear-attention operations used for validation.
+   p0/p0_4_kda_layer.py adapts those operations; review its Moonshot/FLA provenance
+   with the reference adapter. No assertion that all code in air_llm/ is independent
+   of upstream material is made.
+
+5. AirLLM and Gavin Li
+   https://github.com/lyogavin/airllm (MIT)
+   This project was inspired by and extends AirLLM and Gavin Li's Kimi-K3 work.
+   SSD/layer/expert streaming is prior work, not an invention of this project.
+   p0/run_qwen3_mlx.py uses/adapts AirLLM classes; its provenance/license review is
+   recorded in docs/licensing.md. The air_llm package name does not imply affiliation.
+
+Kimi-K3 weights and tokenizer data are distributed separately by Moonshot AI under
+its terms and are not bundled here. See docs/licensing.md for unresolved provenance
+and human license-review gates before public release.

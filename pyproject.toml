@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Kimi-K3 (2.8T MoE) inference on Apple Silicon via MLX, with per-expert disk streaming"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = "LicenseRef-Project-Mixed"
+license-files = ["LICENSE", "NOTICE", "third_party/LICENSE.*"]
 authors = [{ name = "Steve Derezinski" }]
 keywords = ["mlx", "apple-silicon", "kimi", "moe", "llm", "inference", "mxfp4"]
 classifiers = [
@@ -56,4 +57,7 @@ Homepage = "https://github.com/sjdthree/kimi-k3-mlx-macmini"
 Documentation = "https://github.com/sjdthree/kimi-k3-mlx-macmini/blob/main/README.md"
 
 [tool.setuptools.packages.find]
-include = ["air_llm*", "k3ref*"]
+include = ["air_llm*", "k3ref*", "third_party*"]
+
+[tool.setuptools.package-data]
+third_party = ["LICENSE.*"]
