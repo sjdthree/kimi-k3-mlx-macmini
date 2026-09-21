@@ -6,7 +6,7 @@ name: tests
 # conformance checks against a mock engine. Expected: 8 passed, 10 skipped, 0 failed.
 #
 # The ten suites that compare against the real 1.42 TiB checkpoint skip themselves unless
-# K3_CKPT is set, which no runner can satisfy. test_full_parity takes hours and is opt-in
+# K3_CKPT is set, which no runner can satisfy. test_full_parity is slow and is opt-in
 # via `tests/run_all.py --include-slow`.
 #
 # Runners must be Apple Silicon -- mlx has no x86 build. macos-latest is arm64; the

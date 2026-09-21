@@ -19,8 +19,11 @@ experiments; a long answer can take many hours.
 **That's seconds per token, not tokens per second.** Yes, it's slow. What did you expect?
 
 This project was **inspired by and extends [AirLLM](https://github.com/lyogavin/airllm)
-and Gavin Li’s Kimi-K3 streaming work**. SSD, layer, and expert streaming are prior
-work. The contributions here are the Apple Silicon implementation, K3 architecture
+and Gavin Li’s Kimi-K3 streaming work**, described in his article
+[*Unbelievable! Run Kimi K3–2.8 Trillion Parameters — on a Single 4GB GPU*](https://aiadvances.org/unbelievable-run-kimi-k3-2-8-trillion-parameters-on-a-single-4gb-gpu-23590e7a16c2).
+SSD, layer, and expert streaming are prior work; see also
+[flash-moe](https://github.com/danveloper/flash-moe), which streams a large MoE model from
+SSD on a MacBook. The contributions here are the Apple Silicon implementation, K3 architecture
 port, fused Metal MXFP4 kernel, latent MLA cache implementation, and measurement and
 validation tooling. [Attribution and licenses](docs/licensing.md).
 
@@ -29,6 +32,26 @@ language-model depth. “Complete” describes the checkpoint and text model; th
 vision tower is **not executed**. The CUDA/FlashAttention/Triton paths in the reference
 implementation do not run on Metal, so the text architecture is implemented with MLX
 operations and a Metal kernel instead.
+
+## The machine
+
+| | |
+|---|---|
+| Computer | Mac mini (Mac16,11), Apple M4 Pro: 14-core CPU (10 performance + 4 efficiency), 20-core GPU |
+| Memory | 64 GiB unified memory |
+| Checkpoint storage | 2 TB USB4 NVMe enclosure on a **rear** Thunderbolt port. Measured 3.88 GB/s sequential and 3.38 GB/s random (5.25 MiB reads). A front USB-C port managed 1.06 GB/s. |
+| Dense-weight cache | 106 GiB, staged on the internal SSD (optional) |
+| Software (2026-09-21 validation) | macOS 26.6.2, Python 3.12, MLX 0.29.3 |
+
+Everything else about the run is in [runs/release-validation-2026-09-21](runs/release-validation-2026-09-21/RESULTS.md).
+
+## Sample output
+
+[`runs/final-validation/output.txt`](runs/final-validation/output.txt) is a real
+1,383-token answer to a multi-domain audit prompt
+([prompt](prompts/04_polymath_multi_expert.md)). It was generated through the local server
+in about 13.7 hours of wall time, including a 544-second prefill. The per-token log is
+next to it.
 
 ## Evidence and limits
 
@@ -48,6 +71,35 @@ release commit on 2026-09-21 and passed. The smoke test's decode time and bytes 
 token matched the historical 8 GiB runs. The timing, memory and speedup figures are still
 **historical results** from the earlier sweep and runs. They are not performance
 promises for the current checkout. No CUDA end-to-end comparison or million-token-context test is claimed.
+
+## What we tried
+
+Most of the work was finding out what the disk, the OS and the memory system actually do.
+These are development measurements from the [historical records](docs/history.md), not
+controlled experiments.
+
+**Kept**
+
+- **A local USB4 NVMe drive on a rear port.** Every decode token reads roughly 120 GiB of
+  logical data, so storage bandwidth sets the speed.
+- **`read()` into buffers, not `mmap`.** On cold data, `np.memmap` measured 389 MB/s
+  against 3,551 MB/s for `read()`, because page faults defeat readahead.
+- **A small pinned working set (8 GiB).** Of the 8, 16, 24, 32 and 40 GiB budgets
+  tested, 8 GiB was fastest (32.4 s/token) and 40 GiB was slowest (69.2 s/token). A
+  plausible reason is that pinned memory competes with the OS file cache; this was not
+  proven.
+- **A fused Metal MXFP4 kernel** that decodes 4-bit weights inside the matrix-vector
+  product, without materializing a dequantized expert.
+- **A latent MLA cache**, which stores 53× less per context token than the expanded form.
+
+**Discarded**
+
+- **Streaming from a NAS over SMB:** 36–48 MB/s random reads, and concurrency didn't help.
+- **The Mac mini's front USB-C port:** it silently falls back to 10 Gbps USB, about 3.6×
+  slower.
+- **An LRU weight cache:** a 24 GiB cache had a 0% hit rate, because each token scans the
+  layers in order and evicts exactly what it needs next.
+- **A larger pinned budget:** see above.
 
 ## Try it without the checkpoint
 
@@ -81,6 +133,13 @@ storage, manifest verification, dense staging, and the first full-depth smoke te
   latent-attention algebra; it does not invent MLA or guarantee bitwise identity.
 - CLI and a local server implementing a documented subset of the Chat Completions
   API, including streaming. [API limitations](docs/API.md).
+
+## How this was built
+
+This is a one-person project written with heavy use of an AI coding assistant (Claude,
+via Claude Code); commits co-authored with it are marked in the history. The numbers
+come from logged runs on the machine above, and the logs are committed so that they can
+be checked.
 
 ## Reproduce, contribute, release
 

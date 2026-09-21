@@ -19,7 +19,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-# The full-depth parity run walks all 93 layers off disk and takes hours. It is the
+# The full-depth parity run walks all 93 layers off disk (about 10 minutes on the M4 Pro
+# benchmark machine, much longer on slower CPUs or disks). It is the
 # headline correctness result, not a routine gate -- opt in with --include-slow.
 SLOW = {"test_full_parity"}
 

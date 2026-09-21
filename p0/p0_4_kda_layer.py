@@ -12,6 +12,11 @@ Semantics established in P0-2, all pinned to upstream source:
   short conv : causal depthwise k=4, then silu, no bias
   o_norm     : gated RMSNorm, y = x*rstd*w*sigmoid(g)  (fla/modules/fused_norm_gate.py:104)
   recurrence : fla/ops/kda/naive.py::naive_recurrent_kda, scale = K**-0.5
+
+Provenance: the formulas above re-implement operations from flash-linear-attention (MIT)
+and Moonshot's modeling_kimi_linear.py (Kimi K3 License), at the cited source anchors.
+The recurrence loads the unmodified FLA kernel vendored in k3ref/_vendor/. See NOTICE and
+docs/licensing.md.
 """
 import hashlib
 import importlib.util

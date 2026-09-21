@@ -19,7 +19,7 @@ file existing:
 
 Runs on the synthetic model; no checkpoint access.
 
-    conda activate airllm && python tests/test_token_log.py
+    source .venv/bin/activate && python tests/test_token_log.py
 """
 from __future__ import annotations
 

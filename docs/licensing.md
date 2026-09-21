@@ -12,7 +12,7 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | `air_llm/models/kimi_k3/config.py` | Extracted from the reference adapter | Conservatively retain Moonshot attribution/Kimi terms |
 | `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern (confirmed by diff); Kimi license notice required |
 | `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; byte-identical to upstream (see below) |
-| `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Human review of adaptation scope; preserve source anchors and both notices |
+| `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Re-implements FLA gate/norm formulas with source anchors and loads the vendored FLA kernel; header points to NOTICE (reviewed 2026-09-21) |
 | `p0/run_qwen3_mlx.py` (removed) | Adapted AirLLM's `Attention`/`TransformerBlock` (Apache License 2.0) | Removed before release; Qwen/GLM work moved to a separate repository. Still reachable in git history |
 | Checkpoint/tokenizer data | Moonshot | Separate download, not redistributed here |
 
@@ -45,7 +45,7 @@ this project follows the repository. Do not vendor a copy of the article.
 - **AirLLM.** Apache License 2.0 in every revision (`LICENSE` and `air_llm/LICENSE`),
   declared as Apache in `setup.py`, with no NOTICE file and no filled-in copyright
   line. The only file that adapted AirLLM code, `p0/run_qwen3_mlx.py`, was removed
-  before release. `p0/validate_mlx.py` imports AirLLM but copies none of its code.
+  before release, as was `p0/validate_mlx.py`, which only imported AirLLM.
 - **Date discrepancy.** Project notes and a former API alias `kimi-k3-2026-07-16` implied
   a download from 2026-07-16, but the first public Hugging Face commit is 2026-07-27, and
   the benchmark machine's copy of the checkpoint has file dates of 2026-07-27. The content

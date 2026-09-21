@@ -34,8 +34,8 @@ This distribution contains separately licensed material and is not uniformly MIT
    https://github.com/lyogavin/airllm (Apache License 2.0)
    This project was inspired by and extends AirLLM and Gavin Li's Kimi-K3 work.
    SSD/layer/expert streaming is prior work, not an invention of this project.
-   No file here is known to copy AirLLM code; p0/validate_mlx.py only imports it.
-   The air_llm package name does not imply affiliation.
+   No file here is known to copy or import AirLLM code. The air_llm package name
+   does not imply affiliation.
 
 Kimi-K3 weights and tokenizer data are distributed separately by Moonshot AI under
 its terms and are not bundled here. See docs/licensing.md for unresolved provenance

@@ -40,7 +40,7 @@ Gates
         on random weights -- see above)
 
 Run:
-    conda activate airllm && python tests/test_mla_quant.py
+    source .venv/bin/activate && python tests/test_mla_quant.py
 """
 from __future__ import annotations
 

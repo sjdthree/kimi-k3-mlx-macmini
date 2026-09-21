@@ -20,7 +20,7 @@ checkpoint. They run when `K3_CKPT` points at one:
 
 ```sh
 K3_CKPT=/path/to/Kimi-K3 K3_MANIFEST=/path/to/manifest.jsonl.gz python tests/run_all.py
-K3_CKPT=... python tests/run_all.py --include-slow     # + full 93-layer parity, hours
+K3_CKPT=... python tests/run_all.py --include-slow     # + full 93-layer parity, ~10 min on an M4 Pro
 ```
 
 | variable | what |

@@ -33,7 +33,7 @@ Gates
         N1-N3 and M1-M2 are green)
 
 Run:
-    conda activate airllm && python tests/test_mla_cache.py
+    source .venv/bin/activate && python tests/test_mla_cache.py
 """
 from __future__ import annotations
 

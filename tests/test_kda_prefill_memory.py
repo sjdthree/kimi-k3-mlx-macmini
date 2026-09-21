@@ -23,7 +23,7 @@ Gates
 
 Runs on random weights at real KDA head dimensions; no checkpoint access.
 
-    conda activate airllm && python tests/test_kda_prefill_memory.py
+    source .venv/bin/activate && python tests/test_kda_prefill_memory.py
 """
 from __future__ import annotations
 

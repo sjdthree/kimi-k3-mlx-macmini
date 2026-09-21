@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions, ideas and results from your Mac
+    url: https://github.com/sjdthree/kimi-k3-mlx-macmini/discussions
+    about: Ask whether it will run on your hardware, share timings, or propose ideas.
+  - name: Security vulnerability
+    url: https://github.com/sjdthree/kimi-k3-mlx-macmini/security/advisories/new
+    about: Report privately; see SECURITY.md.

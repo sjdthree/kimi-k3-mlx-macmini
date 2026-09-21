@@ -1,0 +1,69 @@
+name: Bug report
+description: Something failed, crashed, or produced wrong output.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions, "will this run on my Mac?", and your own timing results are welcome in
+        [Discussions](https://github.com/sjdthree/kimi-k3-mlx-macmini/discussions) instead.
+        Please write the report yourself and paste real output. Don't paraphrase logs.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Output or log
+      description: The full terminal output, or the relevant part of `--validation-log` / `--token-log`.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac, chip and memory
+      placeholder: "Mac mini M4 Pro, 64 GB"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS, Python and MLX versions
+      placeholder: "macOS 26.6.2, Python 3.12.12, mlx 0.29.3"
+    validations:
+      required: true
+  - type: textarea
+    id: storage
+    attributes:
+      label: Checkpoint storage (for full-model runs)
+      description: |
+        Drive/enclosure and which port it's in. Paste the output of
+        `ioreg -rc IONVMeController | grep -E 'Physical Interconnect|Model Number'`.
+      render: text
+  - type: input
+    id: revision
+    attributes:
+      label: Checkpoint revision (K3_REVISION)
+      placeholder: "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721"
+  - type: dropdown
+    id: tests
+    attributes:
+      label: Does `python tests/run_all.py` pass?
+      options:
+        - "Yes (8 passed, 10 skipped, 0 failed without the checkpoint)"
+        - "Yes, with K3_CKPT set"
+        - "No (paste the failure above)"
+        - "Didn't run it"
+    validations:
+      required: true

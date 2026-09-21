@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use or refer to this work, please cite it as below."
+title: "Kimi-K3 on Apple Silicon / MLX"
+abstract: >-
+  Runs the complete 2.8-trillion-parameter Kimi-K3 checkpoint (~1.42 TiB, all 93
+  language-model layers) on a 64 GiB M4 Pro Mac mini by streaming mixture-of-experts
+  weights from an external NVMe SSD, with native MLX/Metal execution.
+type: software
+authors:
+  - family-names: Derezinski
+    given-names: Steve
+repository-code: "https://github.com/sjdthree/kimi-k3-mlx-macmini"
+version: 0.1.0
+keywords:
+  - mlx
+  - apple-silicon
+  - mixture-of-experts
+  - llm-inference
+  - ssd-offloading
+  - kimi-k3
