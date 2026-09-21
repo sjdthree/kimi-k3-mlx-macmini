@@ -16,6 +16,8 @@ allocator memory**. That memory number excludes the OS file cache and is **not t
 application footprint or total system memory**. This is useful for patient local
 experiments; a long answer can take many hours.
 
+**That's seconds per token, not tokens per second.** Yes, it's slow. What did you expect?
+
 This project was **inspired by and extends [AirLLM](https://github.com/lyogavin/airllm)
 and Gavin Li’s Kimi-K3 streaming work**. SSD, layer, and expert streaming are prior
 work. The contributions here are the Apple Silicon implementation, K3 architecture
