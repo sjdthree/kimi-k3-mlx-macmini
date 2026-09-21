@@ -14,8 +14,9 @@ restarts, or something dies at hour 20. So this script is built around three pro
    rate, ETA, and counts, so `cat progress.json` answers "how is it going" without
    attaching to the process.
 
-Ctrl-C (or SIGTERM) closes the stream, which cancels the generation server-side within
-~1 s rather than leaving it burning disk.
+Ctrl-C requests cancellation. A blocked read may wait until the next chunk or the
+configured read timeout. Already-running prefill/decode computation is not preempted.
+Resume replays text and prefills again; it is not saved-state or exact continuation.
 
     python tools/run_long_job.py --prompt-file prompts/04_polymath_multi_expert.md \
         --out runs/polymath --max-tokens 2500
@@ -104,7 +105,7 @@ class Job:
         from openai import OpenAI
 
         prompt = Path(self.a.prompt_file).read_text()
-        client = OpenAI(base_url=self.a.base_url, api_key=self.a.api_key, timeout=None)
+        client = OpenAI(base_url=self.a.base_url, api_key=self.a.api_key, timeout=self.a.timeout)
 
         prior = self.prior_text()
         if prior and not self.a.resume:
@@ -178,6 +179,7 @@ class Job:
             stream_options={"include_usage": True})
 
         finished = False
+        initial_tokens = self.ntok
         last_flush = 0.0
         with self.f_text.open("a", buffering=1) as fh:
             for chunk in self.stream:
@@ -186,6 +188,7 @@ class Job:
                     self.stream.close()
                     return False
                 if chunk.usage:
+                    self.ntok = initial_tokens + chunk.usage.completion_tokens
                     self.log(f"usage: prompt={chunk.usage.prompt_tokens} "
                              f"completion={chunk.usage.completion_tokens}")
                 if not chunk.choices:
@@ -225,7 +228,8 @@ def main(argv=None) -> int:
     ap.add_argument("--model", default="chat")
     ap.add_argument("--base-url", default=os.environ.get(
         "OPENAI_BASE_URL", "http://127.0.0.1:8080/v1"))
-    ap.add_argument("--api-key", default=os.environ.get("OPENAI_API_KEY", "sk-k3"))
+    ap.add_argument("--timeout", type=float, default=3600, help="Per-read timeout in seconds; long prefills may need more")
+    ap.add_argument("--api-key", default=os.environ.get("OPENAI_API_KEY"))
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--resume", action="store_true",
                     help="continue an existing output.txt in --out")
@@ -237,6 +241,8 @@ def main(argv=None) -> int:
     ap.add_argument("--progress-every", type=float, default=30.0,
                     help="rewrite progress.json at most every N seconds")
     a = ap.parse_args(argv)
+    if not a.api_key:
+        ap.error("Set OPENAI_API_KEY or pass --api-key; no shared default credential is provided")
 
     job = Job(a)
 

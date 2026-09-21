@@ -1,17 +1,4 @@
-"""Model registry: stable aliases over immutable physical IDs, with capabilities.
-
-Alias policy
-------------
-* **Aliases** (`chat`, `reasoning`) are stable names whose target may change. Use them
-  when you want "whatever is currently best for this job".
-* **Physical IDs** (`kimi-k3-2026-07-16`) are immutable. A given physical ID always
-  refers to the same weights; if the weights change, the ID changes. Use them when you
-  need reproducibility.
-
-Capabilities are advertised honestly. Everything reported `false` here also returns a
-structured `unsupported_capability` error if requested, so a client discovers the limit
-either way rather than receiving a plausible-looking but unenforced response.
-"""
+"""Local deployment aliases. IDs do not attest checkpoint identity; record hashes separately."""
 from __future__ import annotations
 
 import time
@@ -31,7 +18,7 @@ class Capabilities:
     embeddings: bool = False
     logprobs: bool = True
     sampling: bool = True
-    context_length: int = 1_048_576
+    context_length: int = 8192
     max_output_tokens: int = 4096
     # Deliberately part of the advertised contract: clients and humans both need it.
     approx_seconds_per_token: float = 34.0
@@ -60,7 +47,7 @@ class ServedModel:
             "created": self.created,
             "owned_by": OWNER,
             "air_llm": {
-                "physical_id": self.id,
+                "deployment_id": self.id,
                 "aliases": list(self.aliases),
                 "description": self.description,
                 "capabilities": self.capabilities.as_dict(),
@@ -69,8 +56,8 @@ class ServedModel:
 
 
 K3 = ServedModel(
-    id="kimi-k3-2026-07-16",
-    aliases=("chat", "reasoning", "kimi-k3"),
+    id="kimi-k3-local",
+    aliases=("chat", "reasoning", "kimi-k3", "kimi-k3-2026-07-16"),
     description="Kimi-K3, 2.8T-parameter MoE (896 experts, top-16), 93 layers, "
                 "streamed from disk on Apple Silicon via MLX.",
     capabilities=Capabilities(
@@ -87,17 +74,17 @@ K3 = ServedModel(
         embeddings=False,
         logprobs=True,
         sampling=True,
-        context_length=1_048_576,
+        context_length=8192,
         max_output_tokens=4096,
         approx_seconds_per_token=34.0,
         notes=(
-            "Disk-bound: ~34 s per generated token, ~70 s to first token. Set generous "
+            "Historical best decode ~32.4 s/token. Prefill can exceed 25 minutes. Set generous "
             "client timeouts (>= 900 s) and prefer stream=true.",
             "Executes one generation at a time; concurrent requests queue and may 429.",
             "No constrained decoding: tools and response_format json_object/json_schema "
             "return unsupported_capability rather than an unenforced approximation.",
             "Text-only. The checkpoint's vision tower is not implemented.",
-            "n>1 multiplies wall-clock time linearly; capped by max_n.",
+            "Only n=1 is supported. Limits are configuration, not validated context capacity.",
         ),
     ),
 )

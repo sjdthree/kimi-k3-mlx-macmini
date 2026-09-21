@@ -38,7 +38,7 @@ def main():
     require_checkpoint()
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", type=int, default=4)
-    ap.add_argument("--cache", default=str(Path("~/k3_cache").expanduser()))
+    ap.add_argument("--cache", default=str(Path(__import__("os").environ.get("K3_CACHE", "k3_cache")).expanduser()))
     ap.add_argument("--ckpt", default=None, help="override checkpoint dir (e.g. the USB4 copy)")
     a = ap.parse_args()
 

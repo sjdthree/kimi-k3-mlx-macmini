@@ -95,7 +95,9 @@ class LatentMoE:
         """
         c = self.cfg
         gate = self._proj(h, e, "w1")
+        mx.eval(gate)
         up = self._proj(h, e, "w3")
+        mx.eval(up)
         act = situ(mx.concatenate([gate, up], axis=-1), c.situ_beta, c.situ_linear_beta)
         del gate, up
         return self._proj(act, e, "w2")

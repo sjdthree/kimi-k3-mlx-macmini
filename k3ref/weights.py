@@ -17,7 +17,7 @@ import torch
 import os
 
 # K3_CKPT / K3_CACHE let the oracle read from the fast local copy instead of the NAS.
-CKPT = Path(os.environ.get("K3_CKPT", "/Volumes/LLMModels/Kimi-K3"))
+CKPT = Path(os.environ.get("K3_CKPT", "Kimi-K3"))
 CACHE = Path(os.environ.get("K3_CACHE", "~/k3_cache")).expanduser()
 
 _NP = {"F32": np.float32, "BF16": np.uint16, "F16": np.float16,
@@ -57,7 +57,8 @@ def _open_manifest(path):
 class WeightStore:
     def __init__(self, cache: Path = CACHE,
                  manifest: Path = Path(os.environ.get("K3_MANIFEST",
-                                                      "manifest.jsonl.gz"))):
+                                                      "manifest.jsonl.gz")), ckpt: Path = CKPT):
+        self.ckpt = Path(ckpt)
         self.blobs: dict[str, tuple[Path, dict]] = {}
         for name in ("dense", "experts"):
             idx = cache / f"{name}.index.json"
@@ -94,7 +95,7 @@ class WeightStore:
 
     def _from_nas(self, name: str):
         r = self.manifest[name]
-        with (CKPT / r["file"]).open("rb") as fh:
+        with (self.ckpt / r["file"]).open("rb") as fh:
             fh.seek(r["offset"])
             raw = fh.read(r["nbytes"])
         return np.frombuffer(raw, dtype=_NP[r["dtype"]]).reshape(r["shape"]), r["dtype"]

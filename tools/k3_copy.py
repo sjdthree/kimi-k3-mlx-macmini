@@ -9,6 +9,7 @@ does the job directly: file-at-a-time, skip-if-complete, per-file size verificat
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import time
@@ -16,6 +17,11 @@ from pathlib import Path
 
 SRC = Path("/Volumes/LLMModels/Kimi-K3")
 BLOCK = 16 << 20
+
+
+def digest(path):
+    with path.open("rb") as f:
+        return hashlib.file_digest(f, "sha256").hexdigest()
 
 
 def files(src: Path):
@@ -44,9 +50,10 @@ def copy_file(src: Path, dst: Path) -> int:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", type=Path, default=SRC)
+    ap.add_argument("--src", type=Path, required=True)
     ap.add_argument("--dest", type=Path, required=True)
     ap.add_argument("--verify-only", action="store_true")
+    ap.add_argument("--sha256", action="store_true", help="Compare file content hashes; reads both copies in full")
     a = ap.parse_args()
 
     a.dest.mkdir(parents=True, exist_ok=True)
@@ -62,7 +69,7 @@ def main():
     for i, p in enumerate(todo, 1):
         dst = a.dest / p.name
         want = p.stat().st_size
-        if dst.exists() and dst.stat().st_size == want:
+        if dst.exists() and dst.stat().st_size == want and (not a.sha256 or digest(p) == digest(dst)):
             done_bytes += want
             continue
         if a.verify_only:
@@ -72,7 +79,7 @@ def main():
         got = copy_file(p, dst)
         done_bytes += got
         copied += 1
-        if got != want:
+        if got != want or (a.sha256 and digest(p) != digest(dst)):
             bad.append((p.name, want, got))
         el = time.time() - t0
         rate = done_bytes / el
@@ -90,8 +97,9 @@ def main():
         for n, w, g in bad[:20]:
             print(f"  {n}: want {w} got {g}")
     else:
-        print("all files present and size-correct")
+        print("all files present and " + ("SHA-256 matched" if a.sha256 else "size-correct (contents not hashed)"))
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

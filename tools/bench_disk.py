@@ -35,7 +35,7 @@ def _open(path, flags):
 
 
 def write_file(path, size):
-    fd = _open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    fd = _open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
     buf = os.urandom(BLOCK)
     t0 = time.time()
     try:
@@ -116,19 +116,7 @@ def main():
         print("     Increase --size-gib above RAM and re-run; results are not usable.")
         return
 
-    # --------------------------------------------------------- workload projection
-    DENSE, EXPERTS = 103.5, 24.1        # GiB read per generated token
-    print("\n" + "-" * 66)
-    print("  Kimi-K3 per-token projection (128 GiB: 103.5 dense + 24.1 experts)")
-    dense_s = DENSE * 2 ** 30 / r
-    exp_s = EXPERTS * 2 ** 30 / r
-    print(f"    dense   {dense_s:6.1f} s")
-    print(f"    experts {exp_s:6.1f} s")
-    print(f"    compute    2.0 s")
-    print(f"    TOTAL   {dense_s + exp_s + 2.0:6.1f} s/token  "
-          f"({1/(dense_s+exp_s+2.0):.3f} tok/s)")
-    print(f"\n  note: measured end-to-end efficiency through the loader is ~79% of raw,")
-    print(f"        so expect roughly {(dense_s+exp_s)/0.79 + 2.0:.0f} s/token in practice.")
+    print("Component benchmark only; this does not predict end-to-end model throughput.")
 
 
 if __name__ == "__main__":

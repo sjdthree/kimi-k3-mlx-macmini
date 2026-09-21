@@ -86,6 +86,9 @@ class K3Tokenizer:
             return self.encoding.encode(text, allowed_special="all")
         return self.encoding.encode(text, disallowed_special=())
 
+    def decode_single_token_bytes(self, token_id: int) -> bytes:
+        return self.encoding.decode_single_token_bytes(token_id)
+
     def decode(self, ids) -> str:
         return self.encoding.decode(list(ids))
 

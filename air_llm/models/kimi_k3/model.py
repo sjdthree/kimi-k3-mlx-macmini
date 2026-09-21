@@ -28,7 +28,7 @@ import mlx.core as mx
 import numpy as np
 
 from .layer import LayerDiag, empty_block_residual
-from .loader import build_layer
+from . import loader
 from .ops import apply_attn_res, rmsnorm
 from .recurrent_state import KimiK3State
 
@@ -114,17 +114,22 @@ class KimiK3Model:
         best_id, best_val, nbytes = -1, -np.inf, 0
         rec = self.src.recs[LM_HEAD]
         V = rec["shape"][0]
+        digest = hashlib.sha256()
         for start in range(0, V, self.lm_head_chunk):
             n = min(self.lm_head_chunk, V - start)
             w = mx.array(self.src.row_block(LM_HEAD, start, n))
             nbytes += n * rec["shape"][1] * 2
             part = (v @ w.T).reshape(-1)
             mx.eval(part)
+            if self.check_finite:
+                self._assert_finite(part, f"logits[{start}:{start+n}]")
+            digest.update(np.asarray(part.astype(mx.float32)).astype("<f4").tobytes())
             i = int(mx.argmax(part).item())
             val = float(part[i].item())
             if val > best_val:
                 best_val, best_id = val, start + i
             del w, part
+        self.last_logit_checksum = digest.hexdigest()
         return best_id, best_val, nbytes
 
     # ------------------------------------------------------------------ forward
@@ -147,7 +152,7 @@ class KimiK3Model:
 
         for L in range(c.num_hidden_layers):
             diag = LayerDiag() if (self.diagnostic or self.check_finite) else None
-            layer = build_layer(c, L, self.src)
+            layer = loader.build_layer(c, L, self.src)
 
             ls = layer.__class__.__mro__  # noqa: F841  (kept for readability of stack)
             from .layer import LayerState
@@ -208,6 +213,7 @@ class KimiK3Model:
             return
         if not bool(mx.all(mx.isfinite(a.astype(mx.float32)))):
             self.nonfinite.append(where)
+            raise FloatingPointError(f"nonfinite values at {where}")
 
     def _check_memory(self, layer: int) -> None:
         if self.max_memory is None:
@@ -233,6 +239,7 @@ class KimiK3Model:
                 t0 = time.time()
                 self.src.reset_counters()
 
+                self.nonfinite = []
                 step_ids = ids if i == 0 else [out_ids[-1]]
                 h = self.embed(step_ids)
                 h = self.forward_token(h, state, None)
@@ -242,7 +249,6 @@ class KimiK3Model:
                     layers_completed=self.cfg.num_hidden_layers,
                     experts_loaded=0, cache_bytes=0, logit_checksum="")
 
-                self.nonfinite = []
                 if self.check_finite:
                     self._assert_finite(h, "final_hidden")
                 tok, val, head_bytes = self.logits(h[:, -1, :])
@@ -260,8 +266,7 @@ class KimiK3Model:
                 rec.expert_bytes = self.src.expert_bytes
                 rec.peak_unified_memory = _peak_memory()
                 rec.cache_bytes = mem["total"]
-                rec.logit_checksum = hashlib.sha256(
-                    f"{tok}:{val:.6f}".encode()).hexdigest()[:16]
+                rec.logit_checksum = self.last_logit_checksum
                 rec.experts_loaded = self.src.experts_loaded
                 rec.nonfinite = len(self.nonfinite)
                 rec.nonfinite_where = ",".join(self.nonfinite[:5])

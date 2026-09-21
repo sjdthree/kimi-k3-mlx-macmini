@@ -21,7 +21,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-CKPT = Path("/Volumes/LLMModels/Kimi-K3")
+CKPT = Path(os.environ.get("K3_CKPT", "Kimi-K3"))
 
 
 def parse_range(s: str) -> list[int]:
@@ -72,6 +72,8 @@ def copy_out(picked, dest: Path, name: str):
     dest.mkdir(parents=True, exist_ok=True)
     blob_path, idx_path = dest / f"{name}.bin", dest / f"{name}.index.json"
 
+    if blob_path.exists() or idx_path.exists():
+        raise FileExistsError(f"Refusing to overwrite existing cache {name}; choose a fresh destination")
     by_shard = defaultdict(list)
     for r in picked:
         by_shard[r["file"]].append(r)
@@ -119,9 +121,8 @@ if __name__ == "__main__":
     ap.add_argument("--plan-only", action="store_true")
     a = ap.parse_args()
 
-    if a.src:
-        CKPT = a.src              # module-level rebind at __main__ scope
-    _, recs = load_manifest(a.manifest)
+    meta, recs = load_manifest(a.manifest)
+    CKPT = a.src or Path(os.environ.get("K3_CKPT", meta["checkpoint"]))
     layers, elayers = parse_range(a.layers), parse_range(a.expert_layers)
     picked = select(recs, layers, elayers, not a.no_globals)
 

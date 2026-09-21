@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 from collections import OrderedDict
 from pathlib import Path
 
@@ -63,9 +64,9 @@ class TensorSource:
     evict dense weights that are certain to be reused.
     """
 
-    def __init__(self, manifest: Path = Path("manifest.jsonl.gz"),
+    def __init__(self, manifest: Path = Path(os.environ.get("K3_MANIFEST", "manifest.jsonl.gz")),
                  ckpt: Path | None = None, cache: Path | None = None,
-                 resident_gb: float = 0.0, weight_dtype=mx.float32):
+                 resident_gb: float = 0.0, weight_dtype=mx.float32, fused: bool | None = None):
         self.recs: dict[str, dict] = {}
         self.meta: dict = {}
         with _open_manifest(manifest) as fh:
@@ -75,7 +76,7 @@ class TensorSource:
                     self.meta = r
                 else:
                     self.recs[r["name"]] = r
-        self.ckpt = Path(ckpt or self.meta["checkpoint"])
+        self.ckpt = Path(ckpt or os.environ.get("K3_CKPT") or self.meta["checkpoint"])
         self.blobs = []
         if cache:
             for name in ("dense", "experts"):
@@ -91,6 +92,7 @@ class TensorSource:
         # they are stored in on disk, so no information is lost -- which halves unified
         # memory per tensor and therefore doubles the effective resident-cache capacity.
         self.weight_dtype = weight_dtype
+        self.fused = weight_dtype != mx.float32 if fused is None else fused
         self.resident_budget = int(resident_gb * 2 ** 30)
         self._resident: OrderedDict[str, mx.array] = OrderedDict()
         self._resident_bytes = 0
@@ -216,8 +218,6 @@ class TensorSource:
                 arr = mx.array((a.astype(np.uint32) << 16).view(np.float32))
         else:
             arr = mx.array(a)
-            if self.weight_dtype != mx.float32 and arr.dtype == mx.float32:
-                arr = arr.astype(self.weight_dtype)
         self.resident_put(name, arr)
         return arr
 
@@ -243,6 +243,8 @@ class TensorSource:
             out = self._read_pair(base + ".weight_packed", base + ".weight_scale")
         except _NotAdjacent:
             out = self.mx_u8(base + ".weight_packed"), self.mx_u8(base + ".weight_scale")
+        from .mxfp4 import assert_scales_representable
+        assert_scales_representable(out[1])
         self.expert_bytes += self.bytes_read - before
         return out
 
@@ -278,6 +280,6 @@ def build_layer(cfg, layer: int, src: TensorSource) -> DecoderLayer:
                              for k in ("gate_proj.weight", "up_proj.weight", "down_proj.weight")})
     else:
         w = {k: src.mx(p + "block_sparse_moe." + k) for k in MOE_KEYS}
-        mlp = LatentMoE(cfg, layer, w, src.expert_source)
+        mlp = LatentMoE(cfg, layer, w, src.expert_source, fused=src.fused)
 
     return DecoderLayer(cfg, layer, norms, attn, mlp)

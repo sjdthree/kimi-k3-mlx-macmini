@@ -24,7 +24,7 @@ from air_llm.models.kimi_k3.model import KimiK3Model  # noqa: E402
 from k3ref.layers import K3Config  # noqa: E402
 
 FAILS = 0
-CACHE = str(Path("~/k3_cache").expanduser())
+CACHE = str(Path(__import__("os").environ.get("K3_CACHE", "k3_cache")).expanduser())
 
 
 def check(label, ok, detail=""):
@@ -38,10 +38,9 @@ def gen(mode, prompt, n_tokens, layers=2, resident_gb=0.0, fused=None):
     cfg = K3Config.load()
     cfg.num_hidden_layers = layers
     src = TensorSource(cache=CACHE, resident_gb=resident_gb,
-                       weight_dtype=mx.bfloat16 if mode == "runtime" else mx.float32)
+                       weight_dtype=mx.bfloat16 if mode == "runtime" else mx.float32, fused=fused)
     model = KimiK3Model(cfg, src, max_memory_gb=48.0)
-    if fused is not None:
-        _orig = model.__class__  # noqa: F841
+    assert src.fused == (mode == "runtime" if fused is None else fused)
     return model.generate(list(prompt), n_tokens), src
 
 

@@ -14,7 +14,7 @@ import asyncio
 import time
 from typing import AsyncIterator
 
-from .engine import Finished, GenParams, Step
+from .engine import Finished, GenParams, Step, TextFilter
 
 
 class _Tok:
@@ -82,6 +82,7 @@ class MockEngine:
             self.active += 1
             produced, text, finish = [], "", "length"
             finished_cleanly = False
+            text_filter = TextFilter(p.stop)
             try:
                 n = min(p.max_tokens, self.max_output_tokens)
                 for i in range(n):
@@ -91,15 +92,18 @@ class MockEngine:
                     await asyncio.sleep(self.delay)
                     self._warm = True
                     tid = (i * 7 + 3) % 100000
-                    piece = self.tokenizer.decode([tid])
+                    piece = text_filter.feed(self.tokenizer.decode([tid]).encode())
                     produced.append(tid)
                     text += piece
                     top = [(tid, -0.1), ((tid + 1) % 100000, -2.3)][:max(p.top_logprobs, 0)]
                     yield Step(token_id=tid, text=piece, index=i,
                                logprob=-0.1 if p.logprobs else None, top=top)
-                    if any(s and s in text for s in p.stop):
+                    if text_filter.stopped:
                         finish = "stop"
                         break
+                tail = text_filter.finish()
+                if tail:
+                    yield Step(token_id=-1, text=tail, index=len(produced))
                 self.completed += 1
                 yield Finished(reason=finish, prompt_tokens=len(p.prompt_tokens),
                                completion_tokens=len(produced))

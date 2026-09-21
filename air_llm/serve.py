@@ -38,7 +38,7 @@ def build_engine(a):
     from .server.engine import Engine
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from k3ref.layers import K3Config
+    from air_llm.models.kimi_k3.config import K3Config
 
     cfg = K3Config.load(Path(a.model) / "config.json")
     if a.layers:
@@ -74,7 +74,7 @@ def main(argv=None) -> int:
                          "bytes_read, experts_loaded, cache_bytes). Needed to tell a "
                          "context-driven slowdown from a routing-driven one; see "
                          "docs/kv-cache/README.md.")
-    ap.add_argument("--max-n", type=int, default=1)
+    ap.add_argument("--max-n", type=int, choices=[1], default=1)
     ap.add_argument("--default-max-tokens", type=int, default=16)
     ap.add_argument("--mock", action="store_true",
                     help="serve a stub model: exercises the HTTP surface without weights")

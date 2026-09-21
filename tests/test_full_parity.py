@@ -22,6 +22,7 @@ count is a parameter.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -52,18 +53,20 @@ def check(label, ok, detail=""):
 
 
 def main():
-    require_checkpoint()
     ap = argparse.ArgumentParser()
     ap.add_argument("--tokens", type=int, default=1)
     ap.add_argument("--prompt-tokens", default="1008,10484,318,15383,387")
-    ap.add_argument("--ckpt", default="/Volumes/USB4_2TBB/Kimi-K3")
-    ap.add_argument("--cache", default=str(Path("~/k3_dense").expanduser()))
-    ap.add_argument("--manifest", default="manifest_local.jsonl.gz")
+    ap.add_argument("--ckpt", default=os.environ.get("K3_CKPT", "Kimi-K3"))
+    ap.add_argument("--cache", default=os.environ.get("K3_CACHE", "k3_dense"))
+    ap.add_argument("--manifest", default=os.environ.get("K3_MANIFEST", "manifest.jsonl.gz"))
     ap.add_argument("--resident-gb", type=float, default=0.0)
     a = ap.parse_args()
 
+    if not (Path(a.ckpt) / "config.json").is_file():
+        print("SKIP: set K3_CKPT or --ckpt to the full checkpoint")
+        return 0
     cfg = K3Config.load(Path(a.ckpt) / "config.json")
-    ws = WeightStore()
+    ws = WeightStore(cache=Path(a.cache), manifest=Path(a.manifest), ckpt=Path(a.ckpt))
     src = TensorSource(manifest=Path(a.manifest), ckpt=Path(a.ckpt),
                        cache=Path(a.cache), resident_gb=a.resident_gb,
                        weight_dtype=mx.float32)      # validation mode for parity

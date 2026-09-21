@@ -39,7 +39,7 @@ def run(resident_gb, layers=2, tokens=3, dtype=None):
     import mlx.core as _mx
     cfg = K3Config.load()
     cfg.num_hidden_layers = layers
-    src = TensorSource(cache=str(Path("~/k3_cache").expanduser()),
+    src = TensorSource(cache=str(Path(__import__("os").environ.get("K3_CACHE", "k3_cache")).expanduser()),
                        resident_gb=resident_gb,
                        weight_dtype=dtype or _mx.float32)
     model = KimiK3Model(cfg, src, max_memory_gb=48.0)
@@ -87,7 +87,7 @@ def main():
           f"({st['hits']} hits / {st['misses']} misses)")
 
     # budget is honoured even when asked to hold far more than fits
-    tiny = TensorSource(cache=str(Path("~/k3_cache").expanduser()), resident_gb=0.25)
+    tiny = TensorSource(cache=str(Path(__import__("os").environ.get("K3_CACHE", "k3_cache")).expanduser()), resident_gb=0.25)
     cfg = K3Config.load()
     cfg.num_hidden_layers = 2
     m = KimiK3Model(cfg, tiny, max_memory_gb=48.0)

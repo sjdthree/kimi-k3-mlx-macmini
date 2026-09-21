@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import os
+import hashlib
 import json
 import re
 import struct
@@ -21,7 +23,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-CKPT = Path("/Volumes/LLMModels/Kimi-K3")
+CKPT = Path(os.environ.get("K3_CKPT", "Kimi-K3"))
 DEFAULT_OUT = Path("manifest.jsonl.gz")
 
 
@@ -85,6 +87,8 @@ def classify(name: str) -> dict:
 def read_header(shard: Path) -> tuple[dict, int]:
     with shard.open("rb") as fh:
         n = struct.unpack("<Q", fh.read(8))[0]
+        if n > shard.stat().st_size - 8 or n > 256 * 2**20:
+            raise ValueError(f"Invalid safetensors header size: {shard.name}")
         return json.loads(fh.read(n)), 8 + n
 
 
@@ -102,7 +106,10 @@ def build(out_path: Path) -> None:
     with gzip.open(out_path, "wt") as out:
         meta = {
             "__meta__": True,
-            "checkpoint": str(CKPT),
+            "checkpoint": str(CKPT.resolve()),
+            "source_revision": os.environ.get("K3_REVISION"),
+            "config_sha256": hashlib.sha256((CKPT / "config.json").read_bytes()).hexdigest(),
+            "index_sha256": hashlib.sha256((CKPT / "model.safetensors.index.json").read_bytes()).hexdigest(),
             "num_shards": len(shards),
             "num_hidden_layers": tcfg["num_hidden_layers"],
             "num_experts": tcfg["num_experts"],
@@ -191,6 +198,24 @@ def verify(path: Path) -> int:
            if r["nbytes"] != DTYPE_BYTES[r["dtype"]] * _prod(r["shape"])]
     check("byte range matches shape x dtype for every tensor", not bad, f"{len(bad)} bad")
 
+    bad_bounds = []
+    for r in recs:
+        shard = CKPT / r["file"]
+        if (not shard.is_file() or r["offset"] < 8 or r["nbytes"] < 0
+                or r["offset"] + r["nbytes"] > shard.stat().st_size):
+            bad_bounds.append(r["name"])
+    check("all tensor ranges lie inside existing shard files", not bad_bounds,
+          f"{len(bad_bounds)} invalid")
+    for filename, key in [("config.json", "config_sha256"),
+                          ("model.safetensors.index.json", "index_sha256")]:
+        if key in meta:
+            check(f"{filename} hash matches manifest",
+                  hashlib.sha256((CKPT / filename).read_bytes()).hexdigest() == meta[key])
+    logical = sum(_prod(r.get("logical_shape", r["shape"])) for r in recs
+                  if not r["name"].endswith("weight_scale"))
+    print(f"  logical tensor elements excluding quantization scales: {logical:,}")
+    print("  This census includes buffers; it is not automatically a trainable-parameter count.")
+
     # ---- structural checks against config
     H = cfg["hidden_size"]
     L = cfg["num_hidden_layers"]
@@ -219,7 +244,9 @@ def verify(path: Path) -> int:
     for r in recs:
         if r.get("kind") != "weight_packed":
             continue
-        sc = by_name[r["scale_tensor"]]
+        sc = by_name.get(r["scale_tensor"])
+        if sc is None:
+            continue
         if r["logical_shape"][1] // sc["shape"][1] != meta["group_size"]:
             gs_bad.append(r["name"])
     check(f"scale grouping == {meta['group_size']} everywhere", not gs_bad, f"{len(gs_bad)} bad")
@@ -285,7 +312,7 @@ if __name__ == "__main__":
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--manifest", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--ckpt", type=Path, default=None,
-                    help="checkpoint directory (defaults to the NAS path)")
+                    help="checkpoint directory (or K3_CKPT)")
     a = ap.parse_args()
     if a.ckpt:
         set_ckpt(a.ckpt)

@@ -132,7 +132,7 @@ def create_app(engine: Engine | None = None, config: dict | None = None) -> Fast
         mid = req.model
         want_usage = bool(req.stream_options and req.stream_options.include_usage)
 
-        STATE["auth"].enter(kid, policy)
+        STATE["auth"].enter(kid, policy, params.max_tokens)
         if req.stream:
             return StreamingResponse(
                 _stream(eng, params, request, cid, created, mid, kid, want_usage,
@@ -231,7 +231,9 @@ def create_app(engine: Engine | None = None, config: dict | None = None) -> Fast
 def _decorate_top(steps, tok):
     """Attach decoded strings to top-logprob token ids."""
     for s in steps:
-        s.top_decoded = [(tok.decode([t]), lp) for t, lp in s.top]
+        from .engine import token_bytes
+        s.raw_bytes = token_bytes(tok, s.token_id) if s.token_id >= 0 else b""
+        s.top_decoded = [(token_bytes(tok, t), lp) for t, lp in s.top]
     return steps
 
 
@@ -336,6 +338,10 @@ async def _stream(eng: Engine, params: GenParams, request: Request, cid: str,
         # An error after headers are sent cannot change the status code, so surface it
         # inside the stream where an SSE client can still see it.
         yield C.sse(exc.envelope())
+        yield C.DONE
+    except Exception:
+        log.exception("stream failed rid=%s", request.state.request_id)
+        yield C.sse(E.APIError(500, "Internal server error", type="server_error").envelope())
         yield C.DONE
     finally:
         STATE["auth"].leave(kid)

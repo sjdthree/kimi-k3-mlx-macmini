@@ -27,6 +27,7 @@ import tempfile
 from pathlib import Path
 
 import mlx.core as mx
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import air_llm.models.kimi_k3.loader as loader  # noqa: E402
@@ -60,9 +61,31 @@ def ensure_model():
                        check=True, capture_output=True)
 
 
-def make(resident_gb=0.0, dtype=mx.float32):
+class MemorySource(TensorSource):
+    """Preload every tensor, including every expert and lm_head; no later disk reads."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.arrays = {name: super(MemorySource, self).raw(name) for name in self.recs}
+        self.reset_counters()
+
+    def raw(self, name):
+        return self.arrays[name]
+
+    def rows(self, name, indices):
+        a, dtype = self.raw(name)
+        a = a[indices]
+        return (a.astype(np.uint32) << 16).view(np.float32) if dtype == "BF16" else a
+
+    def row_block(self, name, start, n):
+        return self.rows(name, slice(start, start + n))
+
+    def _read_pair(self, *args):
+        raise loader._NotAdjacent
+
+
+def make(resident_gb=0.0, dtype=mx.float32, eager=False):
     cfg = K3Config.load(MINI / "config.json")
-    src = TensorSource(manifest=MANIFEST, ckpt=MINI,
+    src = (MemorySource if eager else TensorSource)(manifest=MANIFEST, ckpt=MINI,
                        resident_gb=resident_gb, weight_dtype=dtype)
     return cfg, src, KimiK3Model(cfg, src, max_memory_gb=48.0)
 
@@ -73,6 +96,7 @@ def use_fused(flag: bool):
         lyr = _ORIG_BUILD(cfg, layer, src)
         if hasattr(lyr.mlp, "fused"):
             lyr.mlp.fused = flag
+            assert lyr.mlp.fused is flag
         return lyr
     loader.build_layer = wrapped
 
@@ -104,9 +128,10 @@ def main():
         results["2+3. layer/expert streaming"] = m.generate(list(PROMPT), NTOK)
         stream_read, stream_proj = src_s.bytes_read, src_s.experts_loaded
 
-        _, src_e, m = make(resident_gb=8.0)
+        _, src_e, m = make(resident_gb=8.0, eager=True)
         results["1. eager full-memory"] = m.generate(list(PROMPT), NTOK)
         eager = src_e.cache_stats()
+        check("eager generation reads no checkpoint bytes", src_e.bytes_read == 0)
 
         _, _, m = make(resident_gb=8.0, dtype=mx.bfloat16)
         results["   runtime mode (bf16)"] = m.generate(list(PROMPT), NTOK)

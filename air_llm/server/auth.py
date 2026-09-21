@@ -101,12 +101,15 @@ class Auth:
             raise permission_error(
                 f"Daily token quota of {policy.daily_tokens} exhausted for this key.")
 
-    def enter(self, kid: str, policy: KeyPolicy) -> None:
+    def enter(self, kid: str, policy: KeyPolicy, tokens: int = 0) -> None:
         st = self.state[kid]
         if st.in_flight >= policy.concurrency:
             raise rate_limit(
                 f"This key allows {policy.concurrency} concurrent request(s).",
                 code="concurrency_limit_exceeded")
+        if policy.daily_tokens is not None and st.tokens_today + tokens > policy.daily_tokens:
+            raise permission_error("Requested output budget exceeds the remaining daily quota.")
+        st.tokens_today += tokens
         st.in_flight += 1
 
     def leave(self, kid: str, tokens: int = 0) -> None:

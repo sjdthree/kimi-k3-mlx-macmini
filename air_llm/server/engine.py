@@ -38,6 +38,7 @@ tokens without threading cancellation through 93 layer calls.
 from __future__ import annotations
 
 import asyncio
+import codecs
 import json
 import logging
 import threading
@@ -102,6 +103,7 @@ class Engine:
         self.token_log = Path(token_log) if token_log else None
         self._prev_cache = (0, 0)     # (hits, misses), for per-token deltas
 
+        self._worker_lock = threading.Lock()
         self._lock = asyncio.Semaphore(1)
         self._queue_slots = asyncio.Semaphore(max(1, queue_size))
         self._ready = False
@@ -241,13 +243,15 @@ class Engine:
 
         state = KimiK3State()
         produced: list[int] = []
-        text_so_far = ""
+        text_filter = TextFilter(p.stop)
         cancel = threading.Event()
         finish = "length"
         finished_cleanly = False
 
-        def step(ids: list[int]):
+        def compute_step(ids: list[int]):
             """One forward pass + one sampled token. Runs off the event loop."""
+            from ..models.kimi_k3.model import _reset_peak
+            _reset_peak()
             if self.token_log is not None:
                 self.src.reset_counters()
                 t0 = time.time()
@@ -263,6 +267,14 @@ class Engine:
                 self._log_token(len(produced), ids, c.token_id, time.time() - t0, state)
             return c
 
+        def step(ids):
+            # asyncio cancellation cannot stop a running Metal/Python worker.
+            # Keep mutual exclusion in the worker itself until computation returns.
+            with self._worker_lock:
+                if cancel.is_set():
+                    raise Cancelled()
+                return compute_step(ids)
+
         n_max = min(p.max_tokens, self.max_output_tokens)
         try:
             for i in range(n_max):
@@ -275,27 +287,29 @@ class Engine:
                 self._warm = True
 
                 produced.append(c.token_id)
-                piece = self.tokenizer.decode([c.token_id])
-                text_so_far += piece
-
+                if c.token_id in self._eos_ids():
+                    finish = "stop"
+                    break
+                raw = token_bytes(self.tokenizer, c.token_id)
+                piece = text_filter.feed(raw)
                 yield Step(token_id=c.token_id, text=piece, index=i,
                            logprob=c.logprob if p.logprobs else None,
                            top=c.top)
-
-                if self._hit_stop(text_so_far, p.stop):
-                    finish = "stop"
-                    break
-                if c.token_id in self._eos_ids():
+                if text_filter.stopped:
                     finish = "stop"
                     break
             else:
                 finish = "length"
 
+            tail = text_filter.finish()
+            if tail:
+                yield Step(token_id=-1, text=tail, index=len(produced))
             self.completed += 1
             yield Finished(reason=finish, prompt_tokens=len(p.prompt_tokens),
                            completion_tokens=len(produced))
             finished_cleanly = True
         finally:
+            cancel.set()
             # GeneratorExit (consumer closed us), CancelledError (Starlette cancelled the
             # task group on client disconnect), or an early `break` all land here.
             if not finished_cleanly:
@@ -317,3 +331,41 @@ class Engine:
             if s and (i := text.find(s)) != -1:
                 cut = min(cut, i)
         return text[:cut]
+
+
+def token_bytes(tokenizer, token_id):
+    if hasattr(tokenizer, "decode_single_token_bytes"):
+        return tokenizer.decode_single_token_bytes(token_id)
+    return tokenizer.decode([token_id]).encode("utf-8")
+
+
+class TextFilter:
+    """Incremental UTF-8 decoding and stop matching before text is emitted."""
+    def __init__(self, stops):
+        self.decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self.stops = stops
+        self.pending = ""
+        self.stopped = False
+
+    def feed(self, raw):
+        if self.stopped:
+            return ""
+        self.pending += self.decoder.decode(raw)
+        cuts = [self.pending.index(s) for s in self.stops if s in self.pending]
+        if cuts:
+            out = self.pending[:min(cuts)]
+            self.pending = ""
+            self.stopped = True
+            return out
+        keep = max((n for s in self.stops for n in range(1, len(s))
+                    if self.pending.endswith(s[:n])), default=0)
+        cut = len(self.pending) - keep
+        out, self.pending = self.pending[:cut], self.pending[cut:]
+        return out
+
+    def finish(self):
+        if self.stopped:
+            return ""
+        out = self.feed(b"") + self.pending + self.decoder.decode(b"", final=True)
+        self.pending = ""
+        return out

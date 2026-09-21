@@ -62,7 +62,7 @@ def main():
     require_checkpoint()
     cfg = K3Config.load()
     cfg.num_hidden_layers = 2                 # layers 0-1: both fully cached locally
-    src = TensorSource(cache=str(Path("~/k3_cache").expanduser()))
+    src = TensorSource(cache=str(Path(__import__("os").environ.get("K3_CACHE", "k3_cache")).expanduser()))
     model = KimiK3Model(cfg, src, max_memory_gb=48.0)
 
     print(f"streaming/memory gate   (device {mx.default_device()})")

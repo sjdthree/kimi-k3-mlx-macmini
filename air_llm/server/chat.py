@@ -49,7 +49,7 @@ def _content_text(m: Message, *, caps) -> str:
             raise unsupported_capability("messages[].content",
                                          "Audio content parts are not supported.")
         else:
-            parts.append(str(p.get("text", "")))
+            raise unsupported_capability("messages[].content", "Unknown content part type.")
     return "".join(parts)
 
 
@@ -88,6 +88,14 @@ def validate(req: ChatRequest, model: ServedModel, *, max_n: int) -> None:
     tools cares about that far more than about `presence_penalty`.
     """
     caps = model.capabilities
+    if req.model_extra:
+        raise unsupported_parameter(next(iter(req.model_extra)), "Unknown request field.")
+    if req.extra_body:
+        raise unsupported_parameter("extra_body", "Native generation controls are not implemented.")
+    if len(req.stop_list()) > 4 or any(not x for x in req.stop_list()):
+        raise invalid_request("Supply at most four nonempty stop strings.", param="stop")
+    if req.stop and req.logprobs:
+        raise unsupported_parameter("logprobs", "Log probabilities with stop strings are not supported.")
 
     if req.tools or req.functions:
         raise unsupported_capability(
@@ -124,9 +132,9 @@ def validate(req: ChatRequest, model: ServedModel, *, max_n: int) -> None:
             "frequency_penalty is not implemented; it would materially change sampling. "
             "Omit it or set it to 0.")
 
-    if req.n is not None and req.n > max_n:
+    if req.n is not None and req.n != 1:
         raise invalid_request(
-            f"n={req.n} exceeds the configured maximum of {max_n}. Each additional "
+            f"Only n=1 is implemented. Each additional "
             f"choice costs a full generation (~{caps.approx_seconds_per_token:.0f} s per "
             f"token).", param="n", code="invalid_value")
 
@@ -138,7 +146,8 @@ def validate(req: ChatRequest, model: ServedModel, *, max_n: int) -> None:
     if req.logit_bias:
         for k in req.logit_bias:
             try:
-                int(k)
+                if int(k) < 0 or not -100 <= req.logit_bias[k] <= 100:
+                    raise ValueError
             except ValueError:
                 raise invalid_request(f"logit_bias keys must be token ids; got {k!r}.",
                                       param="logit_bias", code="invalid_value")
@@ -157,10 +166,10 @@ def logprobs_payload(steps) -> dict:
         if s.logprob is None:
             continue
         content.append({
-            "token": s.text,
+            "token": s.raw_bytes.decode("utf-8", errors="replace"),
             "logprob": s.logprob,
-            "bytes": list(s.text.encode("utf-8")),
-            "top_logprobs": [{"token": t, "logprob": lp, "bytes": list(t.encode())}
+            "bytes": list(s.raw_bytes),
+            "top_logprobs": [{"token": t.decode("utf-8", errors="replace"), "logprob": lp, "bytes": list(t)}
                              for t, lp in s.top_decoded],
         })
     return {"content": content}

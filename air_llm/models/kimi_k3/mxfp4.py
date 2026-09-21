@@ -7,8 +7,8 @@ Format (established bit-exactly in P0-3, see P0_RESULTS.md):
     scale          E8M0, value = 2**(scale_byte - 127)
     grouping       group_size 32 along the INPUT axis (last axis of the packed tensor)
 
-Every decoded value is exactly representable in bf16 (proven in P0-3), so `out_dtype`
-may be bfloat16 with zero loss.
+For the observed checkpoint scale range 110..122, decoded weights are exactly
+representable in bf16. Arbitrary E8M0 byte ranges are not supported.
 """
 from __future__ import annotations
 
@@ -57,11 +57,12 @@ def decode_scale_mlx(scales: mx.array) -> mx.array:
 
 def assert_scales_representable(scales) -> None:
     """Guard the one case Metal cannot represent. Cheap: two reductions per tensor."""
-    lo = int(scales.min())
-    if lo == 0:
-        raise ValueError(
-            "MXFP4 scale byte 0 (2**-127) is subnormal in fp32 and is flushed to zero "
-            "by Metal. This checkpoint was expected never to emit it.")
+    lo, hi = int(scales.min()), int(scales.max())
+    # At the upper endpoint, 6 * 2**125 remains finite in bf16/fp32.
+    # At the lower endpoint, 0.5 * 2**-125 remains normal on Metal.
+    if lo < 2 or hi > 252:
+        raise ValueError(f"Unsupported MXFP4 scale range {lo}..{hi}; require 2..252 "
+                         "to avoid Metal subnormal flushing, overflow, and E8M0 NaN")
 
 
 def decode_mxfp4_mlx(packed: mx.array, scales: mx.array, group_size: int = 32,

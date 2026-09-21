@@ -29,7 +29,7 @@ from .models.kimi_k3.model import KimiK3Model
 
 def load_config(model_dir: Path):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from k3ref.layers import K3Config
+    from air_llm.models.kimi_k3.config import K3Config
     return K3Config.load(model_dir / "config.json")
 
 
@@ -74,8 +74,8 @@ def main(argv=None) -> int:
                          "removes proportional I/O; results are unchanged.")
     ap.add_argument("--mode", choices=["validation", "runtime"], default="validation",
                     help="spec section 13. validation: fp32 weights, no fused kernels, "
-                         "exact parity with k3ref. runtime: bf16 weights (the on-disk "
-                         "dtype, lossless) + fused kernels, half the resident memory.")
+                         "comparison with k3ref. runtime: preserves bf16 weights (the on-disk "
+                         "dtype) and F32 tensors + fused kernels.")
     a = ap.parse_args(argv)
 
     if a.temperature != 0.0:

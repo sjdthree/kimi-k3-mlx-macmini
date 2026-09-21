@@ -1,30 +1,7 @@
-"""Estimate Kimi-K3 s/token on a machine WITHOUT copying the 1.42 TiB checkpoint.
+"""Synthetic component microbenchmarks at K3-like shapes.
 
-Per-token cost decomposes into three terms, all measured on the Mac mini (M4, 64 GiB):
-
-    disk I/O          95.57 GiB/token  @ 3.70 GiB/s  =  25.8 s
-    compute+overhead                                 =   6.6 s
-                                                        ------
-                                                        32.4 s   (measured 32.44)
-
-and the 95.57 GiB splits into 71.52 GiB of DENSE weights -- the same bytes every token,
-so perfectly cacheable -- and 24.06 GiB of EXPERT projections drawn from a ~1.3 TiB pool.
-
-A machine with >=128 GiB holds the dense set in RAM permanently, so its disk term collapses
-to experts only. What that machine then costs per token depends on two things this script
-measures directly, with random weights at the real model dimensions:
-
-    1. unified memory bandwidth   -- how fast the resident dense weights stream
-    2. compute throughput         -- the actual matmul shapes, one layer, x93
-
-Nothing here touches the checkpoint. Run it on both machines and compare. Results so far
-are in docs/kv-cache/MACHINE-COMPARISON.md.
-
-Do NOT run this on a machine that is mid-measurement: it allocates several GiB and uses
-the GPU. Doing exactly that during the 2026-08-11 validation run pushed swap from 15.3 to
-20.0 GiB and the run from 32.4 to 35.4 s/token.
-
-    python tools/bench_machine.py
+Does not measure full-model GPU time or predict end-to-end throughput.
+Do not run concurrently with inference: it consumes memory and GPU resources.
 """
 from __future__ import annotations
 
@@ -46,12 +23,6 @@ N_SHARED = 2
 KV_LORA, Q_LORA = 512, 1536
 NH, QHD, VHD, NOPE = 96, 192, 128, 128
 KDA_H, KDA_D = 96, 128
-
-# --- measured on the reference machine (Mac mini M4, 64 GiB) --------------------
-REF = dict(name="Mac mini M4 Pro / 64 GiB", s_per_token=32.44, disk_bw=3.70,
-           dense_gib=71.52, expert_gib=24.06, compute_s=6.61,
-           kernel_s=0.93, membw=188.5)   # measured by running this script there
-
 
 def timeit(fn, warmup=2, iters=5):
     for _ in range(warmup):
@@ -159,44 +130,9 @@ def main():
     print(f"  MLA  layer               : {t_mla*1000:8.2f} ms  x{N_MLA}")
     print(f"  KDA  layer               : {t_kda*1000:8.2f} ms  x{N_LAYERS-N_MLA}")
     print(f"  MoE  block               : {t_moe*1000:8.2f} ms  x{N_LAYERS-1}")
-    print(f"  kernel time per token    : {compute:8.2f} s")
+    print(f"  scaled synthetic time    : {compute:8.2f} s")
 
-    print(f"\n--- reference: {REF['name']} ---")
-    print(f"  measured                 : {REF['s_per_token']:8.2f} s/token")
-    print(f"  of which compute+overhead: {REF['compute_s']:8.2f} s")
-
-    # Compute+overhead is scaled by this machine's measured kernel time relative to the
-    # reference's. That assumes the non-kernel part of the 6.61 s (Python, memory copies,
-    # MXFP4 decode) scales with kernel speed. It is an assumption, not a measurement --
-    # stated plainly so it can be argued with rather than trusted.
-    scale = compute / REF["kernel_s"]
-    non_kernel = REF["compute_s"] - REF["kernel_s"]      # 5.68 s on the reference
-    holds_dense = ram_gib >= 110
-
-    # Two bounds, because the split matters more than either number.
-    #   optimistic  : all 6.61 s scales with kernel speed
-    #   conservative: only the 0.93 s of real kernel time scales; the 5.68 s of Python,
-    #                 memory copies and MXFP4 decode is a fixed cost a faster GPU cannot touch
-    oh_opt = REF["compute_s"] * scale
-    oh_con = compute + non_kernel
-
-    print(f"\n--- projection for THIS machine ---")
-    print(f"  memory bandwidth vs ref  : {bw/REF['membw']:8.2f}x")
-    print(f"  kernel time vs ref       : {scale:8.2f}x   "
-          f"({REF['kernel_s']:.2f} s -> {compute:.2f} s)")
-    print(f"  dense weights            : "
-          f"{'RAM-RESIDENT (fits)' if holds_dense else 'streamed from disk'}"
-          f"   [{ram_gib:.0f} GiB present, need ~110]")
-    print(f"  compute+overhead         : {oh_opt:5.2f} s optimistic / {oh_con:5.2f} s conservative")
-    print()
-    for disk_bw in (1.0, 3.0, 6.0):
-        dense_t = REF["dense_gib"] / bw if holds_dense else REF["dense_gib"] / disk_bw
-        io = dense_t + REF["expert_gib"] / disk_bw
-        lo, hi = io + oh_opt, io + oh_con
-        print(f"  expert disk {disk_bw:>4.1f} GiB/s -> {lo:5.1f}-{hi:5.1f} s/token   "
-              f"{REF['s_per_token']/hi:4.1f}-{REF['s_per_token']/lo:4.1f}x vs Mac mini   "
-              f"job {lo*2197/3600:4.1f}-{hi*2197/3600:4.1f} h")
-    print("\nPASTE EVERYTHING ABOVE BACK.")
+    print("Synthetic scaled component sum only; excludes real routing, I/O and execution overhead.")
 
 
 if __name__ == "__main__":
