@@ -10,7 +10,7 @@ the evidence in hand. Record where that evidence lives next to the box.
       Python 3.11 **and** 3.12:
       `python -m pip install -c constraints-test.txt -e '.[dev]'` then
       `python tests/run_all.py` → **8 passed, 10 skipped, 0 failed**. 2026-09-21: both
-      versions on the audit machine; 3.12 again from a fresh clone of `dafe1e4` on the
+      versions on the audit machine; 3.12 again from a fresh clone of `4c487f5` on the
       benchmark machine; CI runs both on every push.
 - [x] `python tools/summarize_evidence.py` reproduces every figure in
       [evidence.md](evidence.md). Checked 2026-09-21; CI also runs it.
@@ -19,8 +19,8 @@ the evidence in hand. Record where that evidence lives next to the box.
       wheel), `python -m pip wheel --no-deps -w dist .` builds, and the wheel contains
       `LICENSE`, `NOTICE`, `licenses/LICENSE.*` and `k3ref/_vendor/kda_naive.py`.
       2026-09-21: all present; metadata `License-Expression: LicenseRef-Project-Mixed`.
-- [x] CI is green on the commit being released. 2026-09-23: `3388f30` (the v0.1.0 tag),
-      run 35840448253.
+- [x] CI is green on the commit being released. 2026-09-23: `852dc4d` (the v0.1.0 tag),
+      run 35840448253, which ran it as `3388f30` before the identity rewrite (same tree).
 
 ## 2. Full-checkpoint validation (the benchmark machine)
 
@@ -66,12 +66,15 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
 
 ## 4. Repository hygiene before the visibility change
 
-- [ ] History scan: no secrets, keys, tokens, private email addresses or personal data in
+- [x] History scan: no secrets, keys, tokens, private email addresses or personal data in
       any reachable commit: `gitleaks git --log-opts=--all --redact .` and
       `gitleaks dir --redact .` report no leaks. Reviewed false positives are listed in
       `.gitleaksignore`; add to it only after reading the match. 2026-09-21: gitleaks
-      8.30.1 reports no leaks in 58 commits or the tree. **Open:** commit metadata
-      carries a university address and a machine hostname (see the owner's decision).
+      8.30.1 reports no leaks in 63 commits or the tree (rerun 2026-09-23). Commit
+      metadata: on 2026-09-23 the owner had history rewritten so that every commit's
+      author and committer is the GitHub noreply address; a university address and a
+      machine hostname were removed. Commit IDs changed; IDs cited in `runs/` raw logs
+      are the pre-rewrite ones.
 - [x] The evaluator answer key for the private-document demo is not in the tree or in
       any reachable commit: `git log --all --name-only --format= | grep -i -e do_not_publish -e ground_truth -e handoff`
       prints nothing, and `demos/private-document-analysis/SHA256SUMS` still verifies

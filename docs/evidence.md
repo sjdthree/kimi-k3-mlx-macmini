@@ -94,7 +94,7 @@ separate accuracy tradeoffs, not included in this fp32 ratio.
   92/92 router selections matched, greedy token 17374 matched. The oracle substitutes
   CPU operations for CUDA/Triton kernels; this is not a CUDA-reference run. Validation
   mode previously still used the fused path despite its help text.
-- **Rerun at the release commit, 2026-09-21** (`797f0ac`, `K3_REVISION` `c5d1dd4c`),
+- **Rerun at the release commit, 2026-09-21** (`df26b1b`, recorded as `797f0ac` in the raw logs before the 2026-09-23 identity rewrite; `K3_REVISION` `c5d1dd4c`),
   with the corrected unfused validation path: worst-layer cosine **0.99999976**
   (layer 14), 92/92 routers matched, greedy token 17374 matched. Near 1.0, fp32 values
   are spaced 2⁻²⁴ ≈ 6e-8 apart, so the two worst-layer cosines differ by two fp32 steps.
