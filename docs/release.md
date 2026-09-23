@@ -19,7 +19,8 @@ the evidence in hand. Record where that evidence lives next to the box.
       wheel), `python -m pip wheel --no-deps -w dist .` builds, and the wheel contains
       `LICENSE`, `NOTICE`, `licenses/LICENSE.*` and `k3ref/_vendor/kda_naive.py`.
       2026-09-21: all present; metadata `License-Expression: LicenseRef-Project-Mixed`.
-- [ ] CI is green on the commit being released.
+- [x] CI is green on the commit being released. 2026-09-23: `3388f30` (the v0.1.0 tag),
+      run 35840448253.
 
 ## 2. Full-checkpoint validation (the benchmark machine)
 
@@ -71,10 +72,12 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
       `.gitleaksignore`; add to it only after reading the match. 2026-09-21: gitleaks
       8.30.1 reports no leaks in 58 commits or the tree. **Open:** commit metadata
       carries a university address and a machine hostname (see the owner's decision).
-- [ ] The evaluator answer key for the private-document demo is not in the tree or in
-      any reachable commit: `git log --all --name-only | grep -i -e do_not_publish -e ground_truth -e handoff`
+- [x] The evaluator answer key for the private-document demo is not in the tree or in
+      any reachable commit: `git log --all --name-only --format= | grep -i -e do_not_publish -e ground_truth -e handoff`
       prints nothing, and `demos/private-document-analysis/SHA256SUMS` still verifies
       (`cd demos/private-document-analysis && shasum -a 256 -c SHA256SUMS`).
+      (`--format=` keeps commit messages that mention these words out of the match.)
+      2026-09-23: no matches in 63 commits; all 5 hashes OK.
 - [x] No large or unexpected blobs in history
       (`git rev-list --objects --all | git cat-file --batch-check`). Largest blob 482 KB.
 - [x] Machine-specific paths remain only in files marked historical and in raw logs.

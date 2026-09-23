@@ -23,8 +23,9 @@ __pycache__/
 .venv/
 env/
 
-# Scratch
+# Scratch, and private local notes (e.g. LAUNCH-PLAN.local.md)
 *.tmp
+*.local.md
 .bench*
 
 # Long-job run artifacts. In flux while a job is generating; commit a finished
