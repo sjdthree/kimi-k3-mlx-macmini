@@ -4,9 +4,14 @@ Why run a 2.8T model at ~32 seconds per token when the cloud is fast and cheap? 
 tests one answer: document-heavy analysis over material an organization may prefer not to
 send to a cloud inference provider.
 
-> **These answers came from cloud Kimi-K3, not from the Mac.** The reference run used
-> `moonshotai/kimi-k3` through OpenRouter on 2026-09-22. It shows what the model does
-> on these cases. It does not show local output. The cases have **not yet been run on
+> **These answers came from the same model running in the cloud, not from the Mac.**
+> The documents are *simulated* private material: nothing in them is actually
+> confidential, so there was no reason not to send them to a cloud provider. The
+> reference run used `moonshotai/kimi-k3` through OpenRouter on 2026-09-22. It shows
+> what the model does on these cases. It does not show local output.
+>
+> This demo is a side test. Every other result in the repository (benchmarks, parity,
+> memory, sample output) comes from the Mac mini. The cases have **not yet been run on
 > the local implementation**. At ~32.4 s/token, the 6,057–9,821 completion tokens of
 > these answers would take roughly 2½–4 days of decode per case.
 

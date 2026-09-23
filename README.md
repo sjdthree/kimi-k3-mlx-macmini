@@ -44,9 +44,13 @@ synthetic confidential packages with planted answers: a semiconductor fab excurs
 medical-AI incident and an R&D / trade-secret invention strategy. In a **cloud reference
 run** of Kimi-K3 (OpenRouter, $0.327 for all three), the model recovered the planted
 central conclusion in each. In the R&D case it found all four planted invention concepts
-and proposed a further candidate concept of its own. These cases **have not yet been run
-on this Mac**; at ~32.4 s/token each answer would take days. The demo does not show that
-smaller models would fail.
+and proposed a further candidate concept of its own.
+
+This side test is the only part of the repository that ran in the cloud. It used the
+same model, and because the documents are simulated rather than actually private, there
+was no reason not to send them to a cloud provider. Every other result here comes from
+the Mac mini. The cases **have not yet been run on the Mac**; at ~32.4 s/token each
+answer would take days. The demo does not show that smaller models would fail.
 
 ## The machine
 
