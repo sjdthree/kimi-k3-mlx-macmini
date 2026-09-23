@@ -44,3 +44,9 @@ checkpoints/
 build/
 dist/
 *.egg-info/
+
+# Launch handoff packages and unpublished evaluation material. The evaluator answer
+# key for demos/private-document-analysis stays private; see its methodology.md.
+*handoff*.zip
+*_handoff/
+*DO_NOT_PUBLISH*

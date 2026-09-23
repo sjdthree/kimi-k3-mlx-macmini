@@ -1,0 +1,11 @@
+Reconstruct the adverse event from this confidential package.
+
+Separate model failure, software failure, clinical-policy failure,
+deployment/change-control failure, and human error.
+
+Identify the evidence for each conclusion, unresolved facts that could change
+the analysis, and the highest-priority corrective controls.
+
+Do not infer legal liability merely from contractual responsibility.
+
+Cite specific evidence from the supplied document for your conclusions.

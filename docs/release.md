@@ -71,6 +71,10 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
       `.gitleaksignore`; add to it only after reading the match. 2026-09-21: gitleaks
       8.30.1 reports no leaks in 58 commits or the tree. **Open:** commit metadata
       carries a university address and a machine hostname (see the owner's decision).
+- [ ] The evaluator answer key for the private-document demo is not in the tree or in
+      any reachable commit: `git log --all --name-only | grep -i -e do_not_publish -e ground_truth -e handoff`
+      prints nothing, and `demos/private-document-analysis/SHA256SUMS` still verifies
+      (`cd demos/private-document-analysis && shasum -a 256 -c SHA256SUMS`).
 - [x] No large or unexpected blobs in history
       (`git rev-list --objects --all | git cat-file --batch-check`). Largest blob 482 KB.
 - [x] Machine-specific paths remain only in files marked historical and in raw logs.

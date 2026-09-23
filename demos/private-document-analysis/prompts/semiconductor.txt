@@ -1,0 +1,9 @@
+Analyze this confidential fab excursion package.
+
+Determine the most likely physical mechanism causing the defect excursion,
+identify evidence supporting and contradicting the hypothesis, rank plausible
+alternatives, and propose the minimum experiments needed to distinguish them.
+
+Do not assume that any engineer's stated suspicion is correct.
+
+Cite specific evidence from the supplied document for your conclusions.

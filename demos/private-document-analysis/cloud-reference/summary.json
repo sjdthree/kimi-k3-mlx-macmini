@@ -1,0 +1,48 @@
+{
+  "model": "moonshotai/kimi-k3",
+  "run": "2026-09-22T19:49:28",
+  "max_completion_tokens": 20000,
+  "cases_completed": 3,
+  "running_cost": 0.32703129,
+  "results": [
+    {
+      "number": 1,
+      "name": "semiconductor_root_cause",
+      "source_document": "01_semiconductor_confidential_excursion.pdf",
+      "status": "ok",
+      "finish_reason": "stop",
+      "prompt_tokens": 1485,
+      "completion_tokens": 6057,
+      "reasoning_tokens": 4325,
+      "total_tokens": 7542,
+      "elapsed_seconds": 187.46,
+      "cost": 0.06932169
+    },
+    {
+      "number": 2,
+      "name": "medical_ai_adverse_event",
+      "source_document": "02_medical_ai_confidential_incident.pdf",
+      "status": "ok",
+      "finish_reason": "stop",
+      "prompt_tokens": 1248,
+      "completion_tokens": 6856,
+      "reasoning_tokens": 4899,
+      "total_tokens": 8104,
+      "elapsed_seconds": 71.92,
+      "cost": 0.1064139
+    },
+    {
+      "number": 3,
+      "name": "rd_tradesecret_invention_strategy",
+      "source_document": "03_rd_tradesecret_invention_strategy.pdf",
+      "status": "ok",
+      "finish_reason": "stop",
+      "prompt_tokens": 1461,
+      "completion_tokens": 9821,
+      "reasoning_tokens": 6567,
+      "total_tokens": 11282,
+      "elapsed_seconds": 98.59,
+      "cost": 0.1512957
+    }
+  ]
+}

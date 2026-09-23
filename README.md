@@ -33,6 +33,21 @@ vision tower is **not executed**. The CUDA/FlashAttention/Triton paths in the re
 implementation do not run on Metal, so the text architecture is implemented with MLX
 operations and a Metal kernel instead.
 
+## Why run it locally?
+
+For ordinary questions, you wouldn't: cloud Kimi-K3 is far faster and cheaper. The case
+for local execution is material you may not want to send to a cloud inference provider,
+such as unpublished R&D, source code, process data, incident records or contracts.
+
+The [private-document demo](demos/private-document-analysis/README.md) has three
+synthetic confidential packages with planted answers: a semiconductor fab excursion, a
+medical-AI incident and an R&D / trade-secret invention strategy. In a **cloud reference
+run** of Kimi-K3 (OpenRouter, $0.327 for all three), the model recovered the planted
+central conclusion in each. In the R&D case it found all four planted invention concepts
+and proposed a further candidate concept of its own. These cases **have not yet been run
+on this Mac**; at ~32.4 s/token each answer would take days. The demo does not show that
+smaller models would fail.
+
 ## The machine
 
 | | |
