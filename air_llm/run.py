@@ -12,7 +12,7 @@
       --validation-log results/run.jsonl
 
 `--max-memory-gb` defaults to 48, not the spec's 112: this host has 64 GiB of unified
-memory total (K3_MLX_PLAN.md section 1 row 5).
+memory total (archive/K3_MLX_PLAN.md section 1 row 5).
 """
 from __future__ import annotations
 

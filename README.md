@@ -94,7 +94,7 @@ promises for the current checkout. No CUDA end-to-end comparison or million-toke
 ## What we tried
 
 Most of the work was finding out what the disk, the OS and the memory system actually do.
-These are development measurements from the [historical records](docs/history.md), not
+These are development measurements from the [historical records](archive/README.md), not
 controlled experiments.
 
 **Kept**
@@ -164,7 +164,7 @@ be checked.
 
 [Tests and contribution guide](CONTRIBUTING.md) ·
 [Measurement definitions](docs/evidence.md) ·
-[Historical records](docs/history.md) ·
+[Historical records](archive/README.md) ·
 [Security reporting](SECURITY.md) ·
 [Release checklist](docs/release.md)
 

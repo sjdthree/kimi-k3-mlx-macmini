@@ -64,7 +64,7 @@ CFG = {
     "linear_attn_config": {
         "num_heads": 4, "head_dim": 32, "short_conv_kernel_size": 4,
         "use_full_rank_gate": True, "gate_lower_bound": -5.0,
-        # 1-INDEXED, exactly like the real checkpoint (see K3_MLX_PLAN.md section 1)
+        # 1-INDEXED, exactly like the real checkpoint (see archive/K3_MLX_PLAN.md section 1)
         "full_attn_layers": [3], "kda_layers": [1, 2],
     },
     "quantization_config": {

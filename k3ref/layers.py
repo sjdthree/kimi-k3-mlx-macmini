@@ -10,7 +10,7 @@ the two CUDA-only kernels replaced by their pure-torch equivalents:
   fla.ops.kda (Triton)   -> fla/ops/kda/naive.py::naive_recurrent_kda (upstream, unmodified)
 and MXFP4 decoded by the P0-3 decoder (bit-exact vs compressed-tensors).
 
-It is the parity oracle for the MLX implementation (K3_MLX_PLAN.md section 3).
+It is the parity oracle for the MLX implementation (archive/K3_MLX_PLAN.md section 3).
 
 Source anchors (checkpoint's own modeling_kimi_linear.py):
   KimiRMSNorm:232  SituAndMul:75  KimiBlockSparseMLP:262  KimiMLP:294
@@ -95,7 +95,7 @@ def apply_attn_res(prefix_sum, block_residual, proj_w, norm_w, eps):
 # ------------------------------------------------------------------------ attention
 
 class KDAAttention:
-    """KimiDeltaAttention:543. Semantics resolved in P0-2, see P0_RESULTS.md."""
+    """KimiDeltaAttention:543. Semantics resolved in P0-2, see archive/P0_RESULTS.md."""
 
     def __init__(self, cfg: K3Config, layer: int, ws: WeightStore):
         self.cfg, self.L = cfg, layer
@@ -196,7 +196,7 @@ class RouterResult:
 
 
 class LatentMoE:
-    """KimiSparseMoeBlock:815 with the latent wrapper (K3_MLX_PLAN.md section 1 row 2)."""
+    """KimiSparseMoeBlock:815 with the latent wrapper (archive/K3_MLX_PLAN.md section 1 row 2)."""
 
     def __init__(self, cfg: K3Config, layer: int, ws: WeightStore):
         self.cfg, self.L, self.ws = cfg, layer, ws

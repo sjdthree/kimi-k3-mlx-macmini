@@ -12,4 +12,4 @@ extra dependencies. Results are in [P0_RESULTS.md](../P0_RESULTS.md).
 | `p0_4_kda_layer.py` | Does one real KDA layer run on the CPU, finite and deterministic? Yes. |
 | `k3io.py` | Minimal safetensors reader shared by the scripts above. |
 
-For the supported path, see [INSTALL.md](../INSTALL.md).
+For the supported path, see [INSTALL.md](../../INSTALL.md).

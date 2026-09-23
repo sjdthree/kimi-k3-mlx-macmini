@@ -1,7 +1,7 @@
 """Shared MLX ops for Kimi-K3.
 
 Each op is pinned to the source it must reproduce; see k3ref/layers.py for the torch
-oracle and P0_RESULTS.md for how the KDA-side semantics were established.
+oracle and archive/P0_RESULTS.md for how the KDA-side semantics were established.
 """
 from __future__ import annotations
 

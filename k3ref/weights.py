@@ -27,7 +27,7 @@ E2M1 = np.array([0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0], dtype=np.float32)
 
 
 def decode_mxfp4(packed: np.ndarray, scales: np.ndarray, group_size: int = 32) -> np.ndarray:
-    """See p0/p0_3_mxfp4.py - bit-exact vs compressed-tensors 0.17.1."""
+    """See archive/p0/p0_3_mxfp4.py - bit-exact vs compressed-tensors 0.17.1."""
     lo, hi = packed & 0x0F, (packed >> 4) & 0x0F
     codes = np.empty((packed.shape[0], packed.shape[1] * 2), dtype=np.uint8)
     codes[:, 0::2], codes[:, 1::2] = lo, hi

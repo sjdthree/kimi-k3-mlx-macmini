@@ -1,6 +1,6 @@
 """M3: MXFP4 decoding for Kimi-K3 experts, MLX implementation.
 
-Format (established bit-exactly in P0-3, see P0_RESULTS.md):
+Format (established bit-exactly in P0-3, see archive/P0_RESULTS.md):
     nibble order   low nibble = even element (2i), high nibble = odd (2i+1)
     code           bit3 = sign (1 => negative), bits 0-2 = index into
                    [0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0]

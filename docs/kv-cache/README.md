@@ -137,7 +137,7 @@ System state at capture (`baseline-system.txt`):
 | swap used | **24.95 GiB of 25.6 GiB** (0.63 GiB free) |
 | page faults, server process | 599,927,862 |
 
-Reference points from earlier work: `SESSION.md` records **34 s/token** achieved on this
+Reference points from earlier work: `archive/SESSION.md` records **34 s/token** achieved on this
 model; `tests/test_resident_cache.py` predicts **~29.6 s/token** of I/O at 32 GiB
 resident, and notes compute is only ~2.0 s/token. The observed 84–95 s/token is roughly
 **3× the I/O-bound prediction**, and that gap is what this change targets.
@@ -224,7 +224,7 @@ set back under the cliff:
 - degradation ratio moves toward ~1.0 — the point is to *lower the plateau*, not to
   flatten a slope that is already flat by the end
 - swap usage during the run drops well below 24.95 GiB
-- mean s/token falls; the 34 s/token in `SESSION.md` is the optimistic bound
+- mean s/token falls; the 34 s/token in `archive/SESSION.md` is the optimistic bound
 
 **If expert-routing diversity was the dominant cause**, the curve barely moves:
 
@@ -470,7 +470,7 @@ now is O(1) in context:
 3. **Expert residency, if the routing correlation holds.** Prefill is the strongest hint:
    669 s for a 295-token prompt is ~8 token-equivalents, and the mechanism is that every
    prompt token routes independently, touching far more distinct experts. Note the LRU
-   warning in `SESSION.md` is about the cyclic *layer* scan; expert reuse across tokens is
+   warning in `archive/SESSION.md` is about the cyclic *layer* scan; expert reuse across tokens is
    a different access pattern and is not obviously pathological.
 4. **Skip `causal_mask` when T == 1.** During decode the single query sees every cached
    position, so the mask is all zeros — an allocation and a 96 × Tk add per MLA layer per

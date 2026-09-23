@@ -48,7 +48,7 @@ had collapsed to ~1% per halving by 16→8.
 
 ## Two corrections to the record
 
-**1. This reverses `SESSION.md` open thread 5**, which read *"More pinned memory is the
+**1. This reverses `archive/SESSION.md` open thread 5**, which read *"More pinned memory is the
 clearest remaining speedup — 32 GiB covers ~30% of the 105.7 GiB dense working set;
 ~40 GiB should reach ~31 s/token."* Measured, 40 GiB reaches 69 s/token — worse than every
 smaller setting.

@@ -12,7 +12,7 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | `air_llm/models/kimi_k3/config.py` | Extracted from the reference adapter | Conservatively retain Moonshot attribution/Kimi terms |
 | `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern (confirmed by diff); Kimi license notice required |
 | `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; byte-identical to upstream (see below) |
-| `p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Re-implements FLA gate/norm formulas with source anchors and loads the vendored FLA kernel; header points to NOTICE (reviewed 2026-09-21) |
+| `archive/p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Re-implements FLA gate/norm formulas with source anchors and loads the vendored FLA kernel; header points to NOTICE (reviewed 2026-09-21) |
 | `p0/run_qwen3_mlx.py` (removed) | Adapted AirLLM's `Attention`/`TransformerBlock` (Apache License 2.0) | Removed before release; Qwen/GLM work moved to a separate repository. Still reachable in git history |
 | Checkpoint/tokenizer data | Moonshot | Separate download, not redistributed here |
 
@@ -32,7 +32,7 @@ this project follows the repository. Do not vendor a copy of the article.
   `fla/ops/kda/naive.py` from commit
   [`14bef3d9`](https://github.com/fla-org/flash-linear-attention/blob/14bef3d9ec98ee359c9a9c7860795d91675dd091/fla/ops/kda/naive.py)
   (2026-04-17) through current main, including tags v0.5.0–v0.5.2. Line anchors cited
-  in `k3ref/` and `p0/` match FLA main from 2026-07-25, so the copy was most likely
+  in `k3ref/` and `archive/p0/` match FLA main from 2026-07-25, so the copy was most likely
   taken between 2026-07-25 and 2026-08-07 (around v0.5.2). The upstream LICENSE is
   identical to `licenses/LICENSE.flash-linear-attention`.
 - **moonshotai/Kimi-K3.** Public and ungated, with 8 commits, the first

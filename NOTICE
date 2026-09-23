@@ -23,10 +23,10 @@ This distribution contains separately licensed material and is not uniformly MIT
    recorded in the file). That copied portion is covered by the Kimi K3 License,
    not a claim of independent MIT authorship. The surrounding adapter is project work.
 
-4. air_llm/ implementation and p0/ experiments
+4. air_llm/ implementation and archive/p0/ experiments
    The native MLX/Metal implementation follows Kimi architecture semantics. Source
    anchors identify Moonshot and flash-linear-attention operations used for validation.
-   p0/p0_4_kda_layer.py adapts those operations; review its Moonshot/FLA provenance
+   archive/p0/p0_4_kda_layer.py adapts those operations; review its Moonshot/FLA provenance
    with the reference adapter. No assertion that all code in air_llm/ is independent
    of upstream material is made.
 

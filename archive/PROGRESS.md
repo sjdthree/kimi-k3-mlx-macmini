@@ -1,13 +1,13 @@
 > **Historical engineering record — not current release guidance.**
 > This document preserves earlier hypotheses, commands, and measurements. Some were
-> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> superseded or overstated. See [the corrected evidence ledger](../docs/evidence.md) and
 > the root README for current installation, claim scope, and release limitations.
 
 # Kimi-K3 on Apple Silicon — Milestone Status
 
 > **Point-in-time record, 2026-08-06.** The engineering log through milestone 11, left
 > unedited. Performance figures and the `--resident-gb 32` used below predate the KV-cache
-> rewrite; see [README.md](README.md) and [docs/kv-cache/](docs/kv-cache/README.md) for
+> rewrite; see [README.md](../README.md) and [docs/kv-cache/](../docs/kv-cache/README.md) for
 > where the project actually landed.
 
 Plan: `K3_MLX_PLAN.md` · Spike results: `P0_RESULTS.md` · Date: 2026-08-06

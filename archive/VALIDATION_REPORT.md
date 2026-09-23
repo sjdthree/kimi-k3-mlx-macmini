@@ -1,6 +1,6 @@
 > **Historical engineering record — not current release guidance.**
 > This document preserves earlier hypotheses, commands, and measurements. Some were
-> superseded or overstated. See [the corrected evidence ledger](docs/evidence.md) and
+> superseded or overstated. See [the corrected evidence ledger](../docs/evidence.md) and
 > the root README for current installation, claim scope, and release limitations.
 
 # Kimi-K3 on Apple Silicon — Final Validation Report
@@ -12,7 +12,7 @@
 > reversed this report's `32` in favour of `8`. The correctness results here — exact
 > router selection across all 92 MoE layers, worst-case cosine 0.99999988, bit-exact
 > MXFP4 — were re-verified after that work and still hold. Current numbers:
-> [README.md](README.md) and [docs/kv-cache/](docs/kv-cache/README.md).
+> [README.md](../README.md) and [docs/kv-cache/](../docs/kv-cache/README.md).
 
 Against `apple_si_kimik3.md` §16 success criteria. Date: 2026-08-07.
 Host: Mac mini M4 Pro, 64 GiB unified, macOS. Checkpoint: 1.420 TiB, 497,220 tensors.

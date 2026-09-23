@@ -3,7 +3,7 @@
 Maps every tensor in the checkpoint to its shard, byte range, shape, dtype, and role,
 without ever loading a full tensor (safetensors headers only).
 
-Corrects K3_MLX_PLAN.md section 1: experts are `block_sparse_moe.experts.N.{w1,w2,w3}`
+Corrects archive/K3_MLX_PLAN.md section 1: experts are `block_sparse_moe.experts.N.{w1,w2,w3}`
 operating in a 3584-dim latent space, not `mlp.experts.N.{gate_up,down}` on hidden.
 
 Usage:
@@ -276,7 +276,7 @@ def verify(path: Path) -> int:
     hd, nheads = lac["head_dim"], lac["num_heads"]
     alog = [r for r in recs if r["role"] == "attn_A_log"]
     check(f"A_log is stored at head_dim={hd} on every KDA layer "
-          f"(zero-padded from num_heads={nheads}; see P0_RESULTS.md)",
+          f"(zero-padded from num_heads={nheads}; see archive/P0_RESULTS.md)",
           all(r["shape"] == [hd] for r in alog),
           f"n={len(alog)}" + ("" if hd != nheads else "  [degenerate: hd == nheads]"))
 

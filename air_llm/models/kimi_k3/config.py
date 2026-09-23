@@ -53,7 +53,7 @@ class K3Config:
         t = json.loads(path.read_text())["text_config"]
         lac = t["linear_attn_config"]
         n = t["num_hidden_layers"]
-        # config layer lists are 1-INDEXED (see K3_MLX_PLAN.md section 1 row 3)
+        # config layer lists are 1-INDEXED (see archive/K3_MLX_PLAN.md section 1 row 3)
         mla = sorted(i - 1 for i in lac["full_attn_layers"] if i - 1 < n)
         return K3Config(
             hidden_size=t["hidden_size"], num_hidden_layers=n,

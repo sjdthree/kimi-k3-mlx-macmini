@@ -2,7 +2,7 @@
 
 Mirrors KimiMoEGate (modeling_kimi_linear.py:703) and KimiSparseMoeBlock (:815).
 
-The LATENT wrapper is the part the original spec omitted (K3_MLX_PLAN.md section 1 row 2).
+The LATENT wrapper is the part the original spec omitted (archive/K3_MLX_PLAN.md section 1 row 2).
 Experts do not act on the 7168-dim hidden state; they act in a 3584-dim latent space:
 
     hidden(7168) --routed_expert_down_proj--> latent(3584)

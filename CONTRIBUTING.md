@@ -62,7 +62,7 @@ directly: `python tests/test_mla_cache.py`.
 
 Model weights, manifests (they embed local paths), staged caches, `.env` files, keys,
 and new `runs/` output. `.gitignore` covers these; don't force-add them. Historical
-records (`PROGRESS.md`, `SESSION.md`, `docs/kv-cache/`, the tracked `runs/`) are kept as
+records (`archive/PROGRESS.md`, `archive/SESSION.md`, `docs/kv-cache/`, the tracked `runs/`) are kept as
 written. Correct them with a note or in `docs/evidence.md` instead of rewriting them.
 
 ## Licensing of contributions

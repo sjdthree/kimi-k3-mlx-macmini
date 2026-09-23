@@ -3,7 +3,7 @@
 Stage 1 of the plan: a pure-MLX reference path built from standard ops. The fused Metal
 kernel (M10) must match this.
 
-Semantics (resolved in P0-2, see P0_RESULTS.md; each line pinned to upstream source):
+Semantics (resolved in P0-2, see archive/P0_RESULTS.md; each line pinned to upstream source):
     A_log      checkpoint ships [128]; entries 96..127 are exactly 0 in ALL 69 KDA
                layers -> a zero-padded per-value-head [96] vector. Slice [:96].
     dt_bias    [12288] -> reshape(96, 128) == (head, k_channel)

@@ -54,7 +54,7 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
       `config.py` and the tokenizer pattern here, including its commercial and branding
       conditions. 2026-09-21, owner: publish under the Kimi K3 License with its notice,
       and summarise sections 2 and 3 in the README.
-- [x] `p0/run_qwen3_mlx.py` (AirLLM-derived) and `p0/p0_4_kda_layer.py` (Moonshot/FLA
+- [x] `p0/run_qwen3_mlx.py` (AirLLM-derived) and `archive/p0/p0_4_kda_layer.py` (Moonshot/FLA
       operations) reviewed: notices added, or the files removed. 2026-09-21:
       `run_qwen3_mlx.py` and `validate_mlx.py` removed; `p0_4_kda_layer.py` has a
       provenance header.
