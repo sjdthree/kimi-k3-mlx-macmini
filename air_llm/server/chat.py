@@ -2,10 +2,10 @@
 
 Prompt construction
 -------------------
-K3 ships an XTML chat format (`encoding_k3.py`) that this project does not implement, so
-messages are rendered with a plain, documented template. That is a **known deviation**
-and is recorded in the compatibility matrix rather than presented as chat-tuned
-behaviour.
+Messages are rendered in K3's own XTML chat format (`models/kimi_k3/chat_format.py`, a
+port of Moonshot's `encoding_k3.py`) with thinking on, as the model was trained. The
+reasoning comes back in `reasoning_content`, as on Moonshot's API, and the answer in
+`content`.
 """
 from __future__ import annotations
 
@@ -24,10 +24,6 @@ def new_id() -> str:
 
 
 # ------------------------------------------------------------------ prompt render
-
-ROLE_TAG = {"system": "System", "developer": "System", "user": "User",
-            "assistant": "Assistant", "tool": "Tool", "function": "Tool"}
-
 
 def _content_text(m: Message, *, caps) -> str:
     if m.content is None:
@@ -53,14 +49,16 @@ def _content_text(m: Message, *, caps) -> str:
     return "".join(parts)
 
 
-def render_prompt(messages: list[Message], *, caps) -> str:
-    """Flatten messages into a single prompt string.
+def render_prompt_ids(req: ChatRequest, tokenizer, *, caps) -> list[int]:
+    """Prompt token ids for `req.messages` in the K3 chat format.
 
-    Named messages keep their name (`User (alice):`) so multi-party transcripts survive
-    the round trip.
+    Assistant turns keep their `reasoning_content` (or `reasoning`): K3 was trained with
+    the reasoning of earlier turns preserved in the history.
     """
-    lines: list[str] = []
-    for m in messages:
+    from ..models.kimi_k3 import chat_format
+
+    msgs: list[dict] = []
+    for m in req.messages:
         if m.role in ("tool", "function"):
             raise unsupported_capability(
                 "messages[].role",
@@ -70,13 +68,13 @@ def render_prompt(messages: list[Message], *, caps) -> str:
             raise unsupported_capability(
                 "messages[].tool_calls",
                 "Assistant tool_calls are not supported by this backend.")
-        tag = ROLE_TAG.get(m.role, "User")
-        if m.name:
-            tag = f"{tag} ({m.name})"
-        text = _content_text(m, caps=caps)
-        lines.append(f"{tag}: {text}" if text else f"{tag}:")
-    lines.append("Assistant:")
-    return "\n".join(lines)
+        d = {"role": m.role, "content": _content_text(m, caps=caps), "name": m.name}
+        if m.role == "assistant":
+            extra = m.model_extra or {}
+            d["reasoning_content"] = extra.get("reasoning_content") or extra.get("reasoning")
+        msgs.append(d)
+    effort = req.reasoning_effort or chat_format.DEFAULT_THINKING_EFFORT
+    return chat_format.encode_chat(tokenizer, msgs, thinking_effort=effort)
 
 
 # --------------------------------------------------------------------- validation
@@ -176,10 +174,14 @@ def logprobs_payload(steps) -> dict:
 
 
 def completion(cid: str, created: int, model_id: str, text: str, finish: str,
-               usage: dict, *, logprobs: dict | None = None, index: int = 0) -> dict:
+               usage: dict, *, logprobs: dict | None = None, index: int = 0,
+               reasoning: str = "") -> dict:
+    message: dict[str, Any] = {"role": "assistant", "content": text}
+    if reasoning:
+        message["reasoning_content"] = reasoning
     choice: dict[str, Any] = {
         "index": index,
-        "message": {"role": "assistant", "content": text},
+        "message": message,
         "finish_reason": finish,
         "logprobs": logprobs,
     }

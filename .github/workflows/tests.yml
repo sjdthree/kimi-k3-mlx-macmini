@@ -3,7 +3,7 @@ name: tests
 # The checkpoint-free half of the suite: MXFP4 decode against compressed-tensors, the
 # fused Metal matvec, the MLA latent cache, quantised latent storage, KDA prefill memory,
 # an end-to-end run on a 2.7 MB synthetic model, per-token logging, and the OpenAI /v1
-# conformance checks against a mock engine. Expected: 8 passed, 10 skipped, 0 failed.
+# conformance checks against a mock engine. Expected: 10 passed, 10 skipped, 0 failed.
 #
 # The ten suites that compare against the real 1.42 TiB checkpoint skip themselves unless
 # K3_CKPT is set, which no runner can satisfy. test_full_parity is slow and is opt-in

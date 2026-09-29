@@ -71,6 +71,7 @@ class Step:
     index: int
     logprob: float | None = None
     top: list[tuple[int, float]] = field(default_factory=list)
+    channel: str = "content"         # "content" or "reasoning"
 
 
 @dataclass
@@ -237,13 +238,17 @@ class Engine:
             self._queue_slots.release()
 
     async def _run(self, p: GenParams, is_disconnected) -> AsyncIterator[object]:
+        from ..models.kimi_k3.chat_format import ChannelParser
         from ..models.kimi_k3.recurrent_state import KimiK3State
         from ..models.kimi_k3.sampling import choose, full_logits
         import mlx.core as mx
 
         state = KimiK3State()
         produced: list[int] = []
+        # Stop strings apply to the answer, not to the reasoning before it.
         text_filter = TextFilter(p.stop)
+        reasoning_filter = TextFilter([])
+        channels = ChannelParser(self.tokenizer)
         cancel = threading.Event()
         finish = "length"
         finished_cleanly = False
@@ -290,17 +295,24 @@ class Engine:
                 if c.token_id in self._eos_ids():
                     finish = "stop"
                     break
+                channel = channels.feed(c.token_id)
+                if channel is None:          # chat-format structure, not text
+                    continue
                 raw = token_bytes(self.tokenizer, c.token_id)
-                piece = text_filter.feed(raw)
+                filt = reasoning_filter if channel == "reasoning" else text_filter
+                piece = filt.feed(raw)
                 yield Step(token_id=c.token_id, text=piece, index=i,
                            logprob=c.logprob if p.logprobs else None,
-                           top=c.top)
+                           top=c.top, channel=channel)
                 if text_filter.stopped:
                     finish = "stop"
                     break
             else:
                 finish = "length"
 
+            tail = reasoning_filter.finish()
+            if tail:
+                yield Step(token_id=-1, text=tail, index=len(produced), channel="reasoning")
             tail = text_filter.finish()
             if tail:
                 yield Step(token_id=-1, text=tail, index=len(produced))

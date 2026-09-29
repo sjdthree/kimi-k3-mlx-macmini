@@ -204,6 +204,22 @@ def main():
                  {"model": "chat", "messages": base_msg, "presence_penalty": 1.0},
                  "presence_penalty", "unsupported_parameter")
 
+    # ---- K3 chat format: thinking controls and preserved reasoning history
+    r = httpx.post(f"{BASE}/v1/chat/completions",
+                   headers={"Authorization": "Bearer sk-test-key"}, timeout=30,
+                   json={"model": "chat", "max_tokens": 2, "reasoning_effort": "high",
+                         "messages": [{"role": "user", "content": "q"},
+                                      {"role": "assistant", "content": "a",
+                                       "reasoning_content": "because"},
+                                      {"role": "user", "content": "and?"}]})
+    check("    reasoning_effort and assistant reasoning_content are accepted",
+          r.status_code == 200, f"{r.status_code}")
+    r = httpx.post(f"{BASE}/v1/chat/completions",
+                   headers={"Authorization": "Bearer sk-test-key"}, timeout=30,
+                   json={"model": "chat", "messages": base_msg, "reasoning_effort": "medium"})
+    check("    reasoning_effort outside low/high/max -> 400", r.status_code == 400,
+          f"{r.status_code}")
+
     # ---- 8. embeddings must not be routed to a chat model
     try:
         client.embeddings.create(model="chat", input=["a", "b"])

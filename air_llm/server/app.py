@@ -113,9 +113,7 @@ def create_app(engine: Engine | None = None, config: dict | None = None) -> Fast
         n_out = min(req.resolved_max_tokens(cfg.get("default_max_tokens", 16)),
                     policy.max_output_tokens, model.capabilities.max_output_tokens)
 
-        prompt = C.render_prompt(req.messages, caps=model.capabilities)
-        tok = eng.tokenizer
-        prompt_ids = tok.encode(prompt)
+        prompt_ids = C.render_prompt_ids(req, eng.tokenizer, caps=model.capabilities)
 
         params = GenParams(
             prompt_tokens=prompt_ids,
@@ -257,6 +255,8 @@ async def _blocking(eng: Engine, params: GenParams, request: Request, cid: str,
             fin = item
 
     assert fin is not None
+    reasoning = "".join(s.text for s in steps if s.channel == "reasoning")
+    steps = [s for s in steps if s.channel == "content"]
     text = "".join(s.text for s in steps)
     if params.stop:
         text = eng.trim_at_stop(text, params.stop)
@@ -276,7 +276,7 @@ async def _blocking(eng: Engine, params: GenParams, request: Request, cid: str,
 
     body = C.completion(cid, created, mid, text, fin.reason,
                         C.usage_of(fin.prompt_tokens, fin.completion_tokens),
-                        logprobs=lp)
+                        logprobs=lp, reasoning=reasoning)
     M.requests_total.labels("chat.completions", mid, "200", "-").inc()
     return JSONResponse(body, headers={"X-Request-ID": request.state.request_id})
 
@@ -300,11 +300,15 @@ async def _stream(eng: Engine, params: GenParams, request: Request, cid: str,
                 if ttft is None:
                     ttft = time.time() - t0
                     M.ttft_seconds.labels(mid).observe(ttft)
+                emitted += 1
+                if item.channel == "reasoning":
+                    yield C.sse(C.chunk(cid, created, mid,
+                                        delta={"reasoning_content": item.text}))
+                    continue
                 lp = None
                 if want_logprobs and item.logprob is not None:
                     _decorate_top([item], eng.tokenizer)
                     lp = C.logprobs_payload([item])
-                emitted += 1
                 yield C.sse(C.chunk(cid, created, mid, delta={"content": item.text},
                                     logprobs=lp))
             else:

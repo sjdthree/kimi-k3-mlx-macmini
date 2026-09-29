@@ -17,6 +17,11 @@ restarts, or something dies at hour 20. So this script is built around three pro
 Ctrl-C requests cancellation. A blocked read may wait until the next chunk or the
 configured read timeout. Already-running prefill/decode computation is not preempted.
 Resume replays text and prefills again; it is not saved-state or exact continuation.
+The server speaks K3's chat format, so the model reasons first: that stream goes to
+`reasoning.txt` and the answer to `output.txt`. A replayed partial turn is sent back
+as a finished assistant message, so the model answers again rather than continuing
+mid-sentence. For exact resumption, use `tools/run_chat_job.py`, which runs the model
+in-process and saves its state.
 
     python tools/run_long_job.py --prompt-file prompts/04_polymath_multi_expert.md \
         --out runs/polymath --max-tokens 2500
@@ -45,6 +50,7 @@ class Job:
         self.out_dir = Path(a.out)
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.f_text = self.out_dir / "output.txt"
+        self.f_reasoning = self.out_dir / "reasoning.txt"
         self.f_prog = self.out_dir / "progress.json"
         self.f_log = self.out_dir / "job.log"
         self.f_meta = self.out_dir / "meta.json"
@@ -135,10 +141,12 @@ class Job:
 
             messages = [{"role": "user", "content": prompt}]
             prior = self.prior_text()
-            if prior:
+            reasoning = self.f_reasoning.read_text() if self.f_reasoning.exists() else ""
+            if prior or reasoning:
                 # Resume by replaying: the server cannot continue a finished stream, but
-                # feeding back the partial answer makes the model continue from it.
-                messages.append({"role": "assistant", "content": prior})
+                # feeding back the partial turn gives the model what it already worked out.
+                messages.append({"role": "assistant", "content": prior,
+                                 "reasoning_content": reasoning})
 
             self.log(f"attempt {attempt}: requesting {remaining} more tokens "
                      f"(prefill will take ~10-20 min for a long prompt)")
@@ -181,7 +189,8 @@ class Job:
         finished = False
         initial_tokens = self.ntok
         last_flush = 0.0
-        with self.f_text.open("a", buffering=1) as fh:
+        with self.f_text.open("a", buffering=1) as fh, \
+                self.f_reasoning.open("a", buffering=1) as fr:
             for chunk in self.stream:
                 if self.stop:
                     self.log("stop requested -- closing stream (cancels server-side)")
@@ -194,6 +203,11 @@ class Job:
                 if not chunk.choices:
                     continue
                 ch = chunk.choices[0]
+                reasoning = getattr(ch.delta, "reasoning_content", None)
+                if reasoning:
+                    self.ntok += 1
+                    fr.write(reasoning)
+                    fr.flush()
                 if ch.delta.content:
                     if self.ttft is None:
                         self.ttft = time.time() - t_req

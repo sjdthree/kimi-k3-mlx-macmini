@@ -46,6 +46,39 @@ finished with `stop`.
 The cloud is far faster and cheaper than this Mac. Use the cloud whenever the material
 can go there. Local execution matters only when the corpus itself is the problem.
 
+## Running the cases locally
+
+**Status: not started yet.** The local answers will be added here when they finish.
+
+The same three cases are to be run on the Mac mini, in K3's own chat format with
+thinking on, as the model was trained. The chat format is ported from Moonshot's
+`encoding_k3.py` and checked against it token for token (`tests/test_chat_format.py`).
+
+```sh
+export K3_CKPT=/path/to/Kimi-K3 K3_MANIFEST=/path/to/manifest.jsonl.gz
+sh demos/private-document-analysis/local/run.sh
+```
+
+| Setting | Local run | Cloud run |
+|---|---|---|
+| Input | PDF text from `pdftotext -layout`, then the question; committed in [`local/inputs/`](local/inputs/) by [`make_inputs.py`](local/make_inputs.py) | Not recorded |
+| Prompt tokens | 1,278 / 1,039 / 1,239 | 1,485 / 1,248 / 1,461 |
+| Sampling | Temperature 1.0, top-p 0.95 (Moonshot's published settings), seed 0 | Not recorded |
+| Thinking effort | `max` (the upstream default) | Not recorded |
+| Token cap | 20,000 | 20,000 |
+
+The cloud prompts were 207–222 tokens longer in every case, so the cloud provider
+probably wrapped the PDF text differently or added a system prompt. The local input
+is therefore not identical to the cloud input, and the answers will differ word for
+word even if the conclusions agree. The comparison that matters is whether the local
+answers recover the same planted conclusions.
+
+At ~32 s/token each case takes days. [`tools/run_chat_job.py`](../../tools/run_chat_job.py)
+writes every token to disk as it goes, saves the model state every 25 tokens and
+resumes exactly after an interruption. Rerunning `run.sh` resumes wherever it stopped.
+Watch a run with `cat runs/demo-local/<case>/progress.json` and
+`tail -f runs/demo-local/<case>/reasoning.md`.
+
 ## What the model found
 
 **R&D / trade secret.** The package planted four technical concepts that the simplified

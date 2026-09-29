@@ -61,7 +61,7 @@ body:
     attributes:
       label: Does `python tests/run_all.py` pass?
       options:
-        - "Yes (8 passed, 10 skipped, 0 failed without the checkpoint)"
+        - "Yes (10 passed, 10 skipped, 0 failed without the checkpoint)"
         - "Yes, with K3_CKPT set"
         - "No (paste the failure above)"
         - "Didn't run it"

@@ -14,7 +14,7 @@ python -m pip install -c constraints-test.txt -e '.[dev]'
 python tests/run_all.py
 ```
 
-A fresh clone should report **8 passed, 10 skipped, 0 failed**. This is what CI runs on
+A fresh clone should report **10 passed, 10 skipped, 0 failed**. This is what CI runs on
 every push and pull request. The skipped suites compare against the real ~1.42 TiB
 checkpoint. They run when `K3_CKPT` points at one:
 

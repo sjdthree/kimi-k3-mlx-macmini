@@ -85,6 +85,8 @@ K3 = ServedModel(
             "return unsupported_capability rather than an unenforced approximation.",
             "Text-only. The checkpoint's vision tower is not implemented.",
             "Only n=1 is supported. Limits are configuration, not validated context capacity.",
+            "K3 chat format with thinking always on: reasoning is returned in "
+            "reasoning_content and counts against max_tokens.",
         ),
     ),
 )

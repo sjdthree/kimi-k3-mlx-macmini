@@ -53,7 +53,8 @@ not a validated capacity; the longest recorded run had a ~2k-token context.
 | `logit_bias` | ✅ | Non-negative token-id keys, values in −100…100 |
 | `user` | ✅ | Recorded for attribution, never logged with content |
 | `n` | ⚠️ | Only `n=1`; any other value returns 400 `invalid_value` |
-| Multi-turn, `system`/`developer`, named messages | ✅ | Rendered into a plain template — see Deviations |
+| Multi-turn, `system`/`developer`, named messages | ✅ | Rendered in K3's own chat format, ported from Moonshot's `encoding_k3.py` and checked against it token for token |
+| Thinking, `reasoning_effort` | ✅ | Thinking is always on, as upstream. Reasoning streams as `reasoning_content` deltas and is returned in `message.reasoning_content`; `reasoning_effort` is `low`, `high` or `max` (default `max`). Pass earlier turns' `reasoning_content` back in multi-turn chats, as Moonshot recommends. `stop` applies to the answer only |
 | **`tools` / function calling** | ❌ | **No constrained decoding.** Returns 400 `unsupported_capability` |
 | **`response_format: json_schema`** | ❌ | Cannot enforce a schema; returns 400 rather than claiming conformance |
 | **`response_format: json_object`** | ❌ | Same reason — valid JSON cannot be guaranteed |
@@ -195,9 +196,9 @@ to start with no keys and no explicit opt-out.
 
 ## Known deviations
 
-1. **Chat template.** K3 ships an XTML chat format (`encoding_k3.py`) that this project
-   does not implement. Messages are flattened into a plain `Role: content` transcript.
-   Output is coherent but not chat-tuned; expect base-model behaviour.
+1. **Reasoning counts against `max_tokens`.** With thinking on, the model reasons before
+   it answers, often for thousands of tokens at ~32 s each. A small `max_tokens` can end
+   inside the reasoning with an empty `content`. `usage.completion_tokens` counts both.
 2. **`finish_reason: "cancelled"`** is emitted on client disconnect. OpenAI has no such
    value; the alternative was misreporting a truncated generation as `"stop"`.
 3. **Prefill cost scales with prompt length** more than on batched backends — every

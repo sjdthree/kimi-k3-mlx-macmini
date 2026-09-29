@@ -18,10 +18,13 @@ This distribution contains separately licensed material and is not uniformly MIT
    with CPU/PyTorch equivalents for numerical comparisons. config.py was extracted
    from that adapter and is conservatively included in this attribution.
 
-3. air_llm/models/kimi_k3/tokenizer.py
+3. air_llm/models/kimi_k3/tokenizer.py and chat_format.py
    PAT_STR is transcribed from Moonshot's tokenization_kimi.py (source lines 54-63
    recorded in the file). That copied portion is covered by the Kimi K3 License,
    not a claim of independent MIT authorship. The surrounding adapter is project work.
+   chat_format.py ports the text-chat subset of Moonshot's encoding_k3.py (the K3
+   chat format, including its fixed system-message wording) and is covered by the
+   Kimi K3 License. tests/test_chat_format.py compares it with the shipped file.
 
 4. air_llm/ implementation and archive/p0/ experiments
    The native MLX/Metal implementation follows Kimi architecture semantics. Source

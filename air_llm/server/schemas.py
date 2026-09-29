@@ -66,6 +66,8 @@ class ChatRequest(BaseModel):
     user: str | None = None
     stream: bool | None = None
     stream_options: StreamOptions | None = None
+    # Kimi-K3 thinking effort, as on Moonshot's API. None means the model default (max).
+    reasoning_effort: Literal["low", "high", "max"] | None = None
 
     # features this backend cannot honour -- accepted, then rejected by name
     tools: list[dict[str, Any]] | None = None

@@ -11,6 +11,7 @@ This is a provenance inventory and review checklist, **not a legal opinion**.
 | `k3ref/` | Moonshot `modeling_kimi_linear.py` | Kimi K3 License; CPU reference adaptations. Upstream file identical in every public revision (see below) |
 | `air_llm/models/kimi_k3/config.py` | Extracted from the reference adapter | Conservatively retain Moonshot attribution/Kimi terms |
 | `air_llm/models/kimi_k3/tokenizer.py` PAT_STR | Moonshot `tokenization_kimi.py:54-63` | Verbatim pattern (confirmed by diff); Kimi license notice required |
+| `air_llm/models/kimi_k3/chat_format.py` | Moonshot `encoding_k3.py` (revision `c5d1dd4c`, sha256 `b9cb7ae1…5333`) | Port of the text-chat subset, including the fixed thinking-effort message; Kimi K3 License. Segments and token ids checked against the shipped file by `tests/test_chat_format.py` |
 | `k3ref/_vendor/kda_naive.py` | FLA `fla/ops/kda/naive.py` | MIT, original copyright and license retained; byte-identical to upstream (see below) |
 | `archive/p0/p0_4_kda_layer.py` | Moonshot/FLA operations | Re-implements FLA gate/norm formulas with source anchors and loads the vendored FLA kernel; header points to NOTICE (reviewed 2026-09-21) |
 | `p0/run_qwen3_mlx.py` (removed) | Adapted AirLLM's `Attention`/`TransformerBlock` (Apache License 2.0) | Removed before release; Qwen/GLM work moved to a separate repository. Still reachable in git history |
