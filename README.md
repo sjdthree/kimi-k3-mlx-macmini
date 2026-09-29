@@ -33,24 +33,15 @@ vision tower is **not executed**. The CUDA/FlashAttention/Triton paths in the re
 implementation do not run on Metal, so the text architecture is implemented with MLX
 operations and a Metal kernel instead.
 
-## Why run it locally?
+## Why run it locally? Tradesecrets, Incident Records, Customer Data Obligations.
 
-For ordinary questions, you wouldn't: cloud Kimi-K3 is far faster and cheaper. The case
-for local execution is material you may not want to send to a cloud inference provider,
-such as unpublished R&D, source code, process data, incident records or contracts.
+1. R&D / trade-secret patent strategy: A trade secret stays legally protected only while the company takes reasonable steps to keep it secret, so avoid carelessly sharing. Accidental disclosure can also hurt a patent filing strategy. [Detailed R&D synthetic example](demos/private-document-analysis/README.md)
 
-The [private-document demo](demos/private-document-analysis/README.md) has three
-synthetic confidential packages with planted answers: a semiconductor fab excursion, a
-medical-AI incident and an R&D / trade-secret invention strategy. In a **cloud reference
-run** of Kimi-K3 (OpenRouter, $0.327 for all three), the model recovered the planted
-central conclusion in each. In the R&D case it found all four planted invention concepts
-and proposed a further candidate concept of its own.
+2. Semiconductor Customer's fab excursions: keeping the process secret, and keeping the yield problem quiet. Wafer maps, chamber data and maintenance records show exactly how the company makes its chips. A live excursion shows how customers are affected before the company has decided what to disclose, so a leak could hurt customer contracts, supplier negotiations and even the stock price. [Detailed Semiconductor Process Secrets example](demos/private-document-analysis/README.md)
 
-This side test is the only part of the repository that ran in the cloud. It used the
-same model, and because the documents are simulated rather than actually private, there
-was no reason not to send them to a cloud provider. Every other result here comes from
-the Mac mini. The cases **have not yet been run on the Mac**; at ~32.4 s/token each
-answer would take days. The demo does not show that smaller models would fail.
+3. Medical-AI incident: An adverse-event investigation should normally stay under attorney-client privilege and peer-review protection. Never send it it to an outside provider! It create a discoverable copy! The synthetic example also contain patient data (HIPAA) and show who failed to propagate the protocol change. That drives regulatory reporting, lawsuits and who ends up paying. [Detailed Medical-AI incident](demos/private-document-analysis/README.md)
+
+
 
 ## The machine
 
