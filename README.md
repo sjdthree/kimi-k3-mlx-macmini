@@ -33,13 +33,41 @@ vision tower is **not executed**. The CUDA/FlashAttention/Triton paths in the re
 implementation do not run on Metal, so the text architecture is implemented with MLX
 operations and a Metal kernel instead.
 
-## Why run it locally? Tradesecrets, Incident Records, Customer Data Obligations.
+## Why run it locally? 3 Use Cases: Tradesecrets, Incident Records, Customer Data Obligations.
 
-1. R&D / trade-secret patent strategy: A trade secret stays legally protected only while the company takes reasonable steps to keep it secret, so avoid carelessly sharing. Accidental disclosure can also hurt a patent filing strategy. [Detailed R&D synthetic example](demos/private-document-analysis/README.md)
 
-2. Semiconductor Customer's fab excursions: keeping the process secret, and keeping the yield problem quiet. Wafer maps, chamber data and maintenance records show exactly how the company makes its chips. A live excursion shows how customers are affected before the company has decided what to disclose, so a leak could hurt customer contracts, supplier negotiations and even the stock price. [Detailed Semiconductor Process Secrets example](demos/private-document-analysis/README.md)
+1. Medical and Private  — Delays in seeing a Doctor:
 
-3. Medical-AI incident: An adverse-event investigation should normally stay under attorney-client privilege and peer-review protection. Never send it it to an outside provider! It create a discoverable copy! The synthetic example also contain patient data (HIPAA) and show who failed to propagate the protocol change. That drives regulatory reporting, lawsuits and who ends up paying. [Detailed Medical-AI incident example](demos/private-document-analysis/README.md)
+> I need to see a highly specialized doctor. I have all my private test results and really don't want to expose them to the open cloud.
+> == > See a specialist doctor? **Best I can do is three months!**
+> In the meantime, I can give Kimi-K3 my complete medical history—years of labs, medications, reports and notes—and let it work locally on my Mac.
+> It takes three days for a report.
+> 
+> **I'll take the 3 days.**
+
+More Details: Medical-AI incident: An adverse-event investigation should normally stay under attorney-client privilege and peer-review protection. Never send it it to an outside provider! It create a discoverable copy! The synthetic example also contain patient data (HIPAA) and show who failed to propagate the protocol change. That drives regulatory reporting, lawsuits and who ends up paying. [Detailed Medical-AI incident example](demos/private-document-analysis/README.md)
+
+
+2. Legal Strategy with Highly confidential Customer data
+
+> I have highly confidential legal documents and client data. Leaking this would mean the end. I need my attorneys to review.
+> == > They can get back to me in a week or two.
+> In the meantime, I can give the entire confidential corpus to Kimi-K3 and let it analyze the documents locally on my Mac.
+> It takes three days for a full analysis.
+> 
+> **I'll take the 3-days.**
+
+Details:  Semiconductor Customer's fab excursions: keeping the process secret, and keeping the yield problem quiet. Wafer maps, chamber data and maintenance records show exactly how the company makes its chips. A live excursion shows how customers are affected before the company has decided what to disclose, so a leak could hurt customer contracts, supplier negotiations and even the stock price. [Detailed Semiconductor Process Secrets example](demos/private-document-analysis/README.md)
+
+3. Patent Strategy and Tradesecret tradeoff:
+
+> I have several tradesecrets and patents, inventions not filed and competitor patents.  I need a deep dive on the keep-secret vs. patent decision.  Attorneys will need a month to dive into all this complexity.
+>
+> **I’ll take the 3-days.**
+
+Details: R&D / trade-secret patent strategy: A trade secret stays legally protected only while the company takes reasonable steps to keep it secret, so avoid carelessly sharing. Accidental disclosure can also hurt a patent filing strategy. [Detailed R&D synthetic example](demos/private-document-analysis/README.md)
+
+
 
 
 
