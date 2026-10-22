@@ -1,0 +1,102 @@
+<|open|>message role="system" type="thinking-effort"<|sep|>`thinking_effort` guides on how much to think in your thinking channel (not including the response channel), supported values include `low`, `medium`, `high`, and `max`.
+Now the system is invoked with `thinking_effort=max`.<|close|>message<|sep|><|end_of_msg|><|open|>message role="user"<|sep|>Case 1 - Semiconductor Root-Cause Investigation
+                              CONFIDENTIAL - SYNTHETIC BOARD / TECHNICAL REVIEW MATERIAL
+
+Synthetic confidential process-excursion package. The decisive conclusion is deliberately distributed across metrology, tool
+history, chamber splits, and maintenance notes.
+
+Executive context
+Orion Ridge Semiconductor operates a 300 mm pilot line for a proprietary low-k interconnect module. Lot OR-26-091 showed
+a sudden increase in post-etch bridge defects. Yield engineering initially suspected pattern density because the failures
+appeared more often in outer die. The purpose of this package is to determine the most likely physical mechanism and the
+minimum discriminating experiments.
+
+1. Excursion summary
+      Metric                            Baseline                 Excursion              Observation
+
+      Bridge defect density             0.08/cm2                 0.71/cm2               8.9x increase
+
+      Center 0-70 mm                    0.07/cm2                 0.11/cm2               Near baseline
+
+      Mid 70-120 mm                     0.08/cm2                 0.49/cm2               Elevated
+
+      Edge 120-145 mm                   0.10/cm2                 1.62/cm2               Strong radial rise
+
+      High-pattern-density die          0.09/cm2                 0.73/cm2               No meaningful density dependence
+
+      Low-pattern-density die           0.08/cm2                 0.69/cm2               No meaningful density dependence
+
+2. Wafer-level metrology
+                    Wafer        Chamber       Radius band    Low-k thickness nm         CD bias nm          Defects/cm2
+
+                    W01          C2            center         62.1                       +0.4                0.10
+
+                    W01          C2            mid            61.4                       +1.2                0.46
+
+                    W01          C2            edge           59.7                       +3.9                1.55
+
+                    W02          C2            center         62.0                       +0.5                0.12
+
+                    W02          C2            mid            61.2                       +1.5                0.52
+
+                    W02          C2            edge           59.4                       +4.2                1.71
+
+                    W03          C1            center         62.2                       +0.3                0.08
+
+                    W03          C1            mid            62.0                       +0.5                0.10
+
+                    W03          C1            edge           61.7                       +0.8                0.14
+
+Ellipsometry repeatability is +/-0.25 nm. CD-SEM repeatability is +/-0.4 nm. The radial thickness gradient therefore exceeds
+measurement noise.
+
+3. Tool and maintenance history
+     Date/time                   Tool                    Event
+
+     Sep 14 18:10                ETCH-7 / C2             Preventive maintenance completed; edge gas-ring seal replaced.
+
+     Sep 14 19:05                ETCH-7 / C2             Post-PM qualification wafer passed center-point endpoint and blanket etch-rate checks.
+
+     Sep 15 07:20                ETCH-7 / C2             OR-26-091 begins; wafers W01-W06 processed.
+
+     Sep 15 13:40                ETCH-7 / C1             W07-W09 processed after dispatch reassignment.
+
+     Sep 15 17:30                ETCH-7 / C2             Technician notes MFC calibration normal; no alarm history.
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                                                      Page 1
+
+4. Engineering notes and distractors
+The lithography team reported no scanner overlay excursion. Incoming low-k material passed viscosity and solids
+specifications. CMP removal-rate maps were within historical control. Ambient humidity was 6% above the monthly mean, but
+other lots exposed to the same ambient window did not show the defect. A new photoresist lot was introduced two days earlier
+and was used on both affected and unaffected chamber splits.
+A facilities work order records a brief chilled-water pressure fluctuation on Sep 15 at 09:12. Tool telemetry shows no
+corresponding chuck-temperature excursion. A chamber engineer informally noted that the replacement edge seal 'felt slightly
+proud' during installation but the standard PM checklist contains no quantitative seating-height measurement.
+
+5. Cross-lot comparison
+     Split                            C2 immediately post-PM   C2 after seal reseat         C1 same recipe
+
+     Edge thickness delta vs center   -2.5 nm                  -0.5 nm                      -0.4 nm
+
+     Edge CD bias                     +4.0 nm                  +0.9 nm                      +0.8 nm
+
+     Bridge defects edge              1.66/cm2                 0.18/cm2                     0.14/cm2
+
+Challenge prompt
+   Analyze this confidential fab excursion package. Determine the most likely physical mechanism
+   causing the defect excursion, identify evidence supporting and contradicting the hypothesis, rank
+   plausible alternatives, and propose the minimum experiments needed to distinguish them. Do not
+   assume that any engineer's stated suspicion is correct.
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                               Page 2
+
+Analyze this confidential fab excursion package.
+
+Determine the most likely physical mechanism causing the defect excursion,
+identify evidence supporting and contradicting the hypothesis, rank plausible
+alternatives, and propose the minimum experiments needed to distinguish them.
+
+Do not assume that any engineer's stated suspicion is correct.
+
+Cite specific evidence from the supplied document for your conclusions.<|close|>message<|sep|><|end_of_msg|><|open|>message role="assistant"<|sep|><|open|>think<|sep|>

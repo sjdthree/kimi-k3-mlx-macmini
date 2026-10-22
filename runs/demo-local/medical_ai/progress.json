@@ -1,0 +1,9 @@
+{
+  "status": "done",
+  "tokens": 8225,
+  "max_tokens": 20000,
+  "session_elapsed": "3 days, 8:19:42",
+  "recent_s_per_token": 34.91,
+  "eta_at_max_tokens": "4 days, 18:11:49",
+  "updated": "2026-10-13T10:24:17"
+}

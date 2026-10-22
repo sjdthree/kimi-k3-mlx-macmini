@@ -1,0 +1,96 @@
+<|open|>message role="system" type="thinking-effort"<|sep|>`thinking_effort` guides on how much to think in your thinking channel (not including the response channel), supported values include `low`, `medium`, `high`, and `max`.
+Now the system is invoked with `thinking_effort=max`.<|close|>message<|sep|><|end_of_msg|><|open|>message role="user"<|sep|>Case 2 - Medical AI Adverse-Event Investigation
+                               CONFIDENTIAL - SYNTHETIC BOARD / TECHNICAL REVIEW MATERIAL
+
+Synthetic confidential incident package designed to force causal reasoning across model behavior, software, clinical policy,
+deployment governance, and contractual responsibility.
+
+Board incident-review context
+Aster Vale Health develops an adaptive sepsis deterioration model deployed at Northbridge Medical Center. A serious adverse
+event occurred after release 4.8. The model executed the configured policy as designed; the open question is whether the
+failure originated in the model, software implementation, clinical policy, deployment controls, or human use.
+
+1. Cleared / approved operating envelope
+      Item                             Documented requirement
+
+      Intended use                     Risk stratification support for adult inpatients; not a stand-alone diagnostic.
+
+      Alert policy                     High-risk alert when calibrated 6-hour deterioration probability >=0.35.
+
+      Adaptive update                  Monthly recalibration of intercept and calibration slope permitted; feature set and clinical action policy locked.
+
+      Override                         Hospital may suppress alerts only through validated unit-level configuration with clinical governance approval.
+
+2. Hospital clinical policy excerpt
+Northbridge policy NMC-SEP-17, revision 2024-11, instructs nursing staff to defer escalation when an alert occurs within four
+hours after initiation of a documented fluid-resuscitation protocol unless specified instability criteria are present. In March 2026,
+the hospital's sepsis committee revised its fluid protocol and shortened reassessment to two hours, but NMC-SEP-17 was not
+updated.
+
+3. Release 4.8 software notes
+      Change                                      Status
+
+      Monthly calibration refresh                 Implemented; no feature or threshold changes.
+
+      Alert suppression rule                      Reads hospital-configured suppression interval from policy service.
+
+      Fallback if policy service unavailable      Uses last validated configuration.
+
+      New self-learning feature weights           Not implemented.
+
+4. Incident timeline
+      Time                  Event
+
+      08:12                 Patient begins revised fluid protocol.
+
+      10:31                 Model score rises to 0.47; high-risk condition satisfied.
+
+      10:31                 Policy service returns suppression_interval=4h from NMC-SEP-17.
+
+      10:31                 Software records ALERT_SUPPRESSED_POLICY; no clinician-facing alert.
+
+      11:04                 Lactate and blood pressure worsen.
+
+      11:58                 Bedside nurse escalates based on clinical signs.
+
+      12:17                 Rapid-response team arrives.
+
+5. Model and QA evidence
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                                                               Page 1
+
+Offline replay using release 4.7, release 4.8, and a frozen pre-adaptation model all cross the 0.35 alert threshold between
+10:27 and 10:33. Independent code review finds the suppression function implemented exactly as specified. The March
+clinical-policy revision was approved in committee minutes but never entered into the policy-service change-control queue.
+
+6. Internal correspondence
+Feb 18 - Product manager: 'Hospital policy service is authoritative for local workflow rules; we should not hard-code these.'
+Mar 22 - Clinical integration lead: 'Northbridge says the new fluid protocol is live. I don't see a corresponding SEP-17 ticket;
+assuming their governance team owns that.' Apr 03 - Hospital analyst: 'We updated the bedside protocol but I wasn't aware the
+AI suppression interval was sourced from the older policy object.'
+
+7. Contract / responsibility excerpt
+Vendor is responsible for validated operation of the software and documented model-update mechanism. Hospital is
+responsible for clinical workflow policies, local configuration approval, and timely notification of policy changes affecting
+integration behavior. Vendor must provide reasonable safeguards against configuration inconsistency where technically
+feasible.
+
+Challenge prompt
+   Reconstruct the adverse event from this confidential package. Separate model failure, software
+   failure, clinical-policy failure, deployment/change-control failure, and human error. Identify the
+   evidence for each conclusion, unresolved facts that could change the analysis, and the
+   highest-priority corrective controls. Do not infer legal liability merely from contractual responsibility.
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                                        Page 2
+
+Reconstruct the adverse event from this confidential package.
+
+Separate model failure, software failure, clinical-policy failure,
+deployment/change-control failure, and human error.
+
+Identify the evidence for each conclusion, unresolved facts that could change
+the analysis, and the highest-priority corrective controls.
+
+Do not infer legal liability merely from contractual responsibility.
+
+Cite specific evidence from the supplied document for your conclusions.<|close|>message<|sep|><|end_of_msg|><|open|>message role="assistant"<|sep|><|open|>think<|sep|>

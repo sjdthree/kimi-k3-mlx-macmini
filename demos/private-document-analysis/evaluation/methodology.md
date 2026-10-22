@@ -29,6 +29,20 @@ or file attachment), the sampling parameters, any system prompt, and the OpenRou
 provider that served the request. Treat the run as a single sample, not a controlled
 measurement.
 
+## The local run
+
+| | |
+|---|---|
+| Model | Full Kimi-K3 checkpoint (revision `c5d1dd4c`), this repository's MLX implementation, M4 Pro Mac mini with 64 GiB |
+| Dates | 2026-09-29 to 2026-10-13 |
+| Inputs | [`local/inputs/`](../local/inputs/): `pdftotext -layout` text plus the question from `prompts/`, as one user message with no system prompt |
+| Settings | K3 chat format, thinking effort `max`, temperature 1.0, top-p 0.95, seed 0, 20,000-token cap |
+| Results | [`local-results/`](../local-results/); raw files in [`runs/demo-local/`](../../../runs/demo-local/) |
+
+Everything the cloud run left unrecorded is fixed and committed here. It is still one
+sample per case. The local answers were read against the planted conclusions as the
+demo README describes them, not against the evaluator guide, and were not scored.
+
 ## Judging
 
 The answers were read against the evaluator guide on five dimensions, each scored 0–2:

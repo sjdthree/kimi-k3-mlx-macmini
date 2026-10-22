@@ -1,0 +1,19 @@
+{
+  "messages": "demos/private-document-analysis/local/inputs/rd_tradesecret.json",
+  "messages_sha256": "be7464d4721068583b71e38fe13deefe10852eaa34e7c6f1f07d3909f0ef01a7",
+  "prompt_tokens": 1239,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "seed": 0,
+  "thinking_effort": "max",
+  "mode": "runtime",
+  "model_config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+  "max_tokens": 20000,
+  "resident_gb": 8.0,
+  "commit": "42df3b1",
+  "started": "2026-09-29T09:40:49",
+  "resumes": 1,
+  "commits": [
+    "42df3b1"
+  ]
+}

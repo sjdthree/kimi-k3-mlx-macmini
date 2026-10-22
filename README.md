@@ -69,6 +69,11 @@ Details: R&D / trade-secret patent strategy: A trade secret stays legally protec
 
 
 
+All three cases were run end to end on the Mac mini, taking 3–4½ days of decode each.
+The local answers recovered the same planted conclusions as a cloud reference run of the
+same model. [Local answers](demos/private-document-analysis/local-results/results.md) ·
+[comparison with the cloud run](demos/private-document-analysis/README.md#what-the-model-found)
+
 
 
 ## The machine

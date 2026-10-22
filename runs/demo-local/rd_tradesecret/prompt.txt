@@ -1,0 +1,111 @@
+<|open|>message role="system" type="thinking-effort"<|sep|>`thinking_effort` guides on how much to think in your thinking channel (not including the response channel), supported values include `low`, `medium`, `high`, and `max`.
+Now the system is invoked with `thinking_effort=max`.<|close|>message<|sep|><|end_of_msg|><|open|>message role="user"<|sep|>Case 3 - R&D; / Trade Secret Invention Strategy
+                             CONFIDENTIAL - SYNTHETIC BOARD / TECHNICAL REVIEW MATERIAL
+
+Synthetic board-level package: confidential R&D;, manufacturing know-how, controls, existing patent coverage, disclosure risk,
+and invention strategy.
+
+Board strategy context
+HelioForge Systems develops high-density liquid-cooled AI compute modules. Management believes the company's most
+valuable intellectual property may not be captured by its filed patents because several performance improvements emerged as
+manufacturing and control-system know-how. The board wants an integrated R&D; / trade-secret / invention strategy before
+the next financing.
+
+1. Existing patent portfolio - simplified claims
+      Family                 Core claimed concept
+
+      HF-101                 Cold plate with parallel microchannels beneath accelerator package.
+
+      HF-118                 Rack manifold with redundant pumps and pressure sensors.
+
+      HF-133                 Controller that adjusts coolant flow as a function of measured package temperature.
+
+2. Confidential R&D; notebook excerpts
+Experiment 26-041: During rapid workload transitions, package hotspot temperature overshoots even when average coolant
+flow is increased. Engineer L. Chen observed that the derivative of GPU power demand predicts the hotspot 180-260 ms
+before the package temperature sensor responds.
+Experiment 26-052: A controller using workload power derivative plus inlet-fluid compressibility estimate reduced
+99.9th-percentile hotspot overshoot by 37% relative to temperature-feedback control. The effect disappeared when the
+accumulator pre-charge was changed by more than 12%.
+Experiment 26-061: Manufacturing found that intentionally varying microchannel width across the cold plate by +/-6%
+counteracted package-level heat-flux asymmetry. The CAD variation is generated from each package's measured
+post-assembly thermal map, not from a fixed geometry.
+
+3. Manufacturing process notes
+The adaptive channel-width map is generated after package attach. A proprietary script converts thermal-map coordinates into
+laser-machining offsets. Operators see only a job identifier; the transformation coefficients are stored in an access-controlled
+build server. Yield improved from 91.2% to 97.8% after introduction.
+A supplier receives final machining coordinates but not the thermal map, algorithm, or coefficients. The supplier contract
+prohibits reverse engineering and reuse of job files. Coordinates are unique to each unit and retained by the supplier for 30
+days.
+
+4. Controls / firmware notes
+      Feature                          Current implementation                                                      Publicly documented?
+
+      Temperature feedback             PID using package temperature                                               Yes - patent HF-133
+
+      Power-derivative feed-forward    Predictive term from accelerator telemetry                                  No
+
+      Compressibility estimator        Online estimate from pressure-wave response                                 No
+
+      Accumulator pre-charge coupling Calibration table links estimator to pre-charge                              No
+
+      Per-unit channel geometry        Thermal-map-derived machining transformation                                No
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                                                  Page 1
+
+5. Commercial and reverse-engineering observations
+Customers can measure external coolant pressure, inlet/outlet temperature, and application performance. They cannot directly
+inspect firmware because secure boot and signed updates are enabled. Destructive teardown reveals the physical channel
+geometry, although inferring the per-unit generation algorithm would require comparing multiple units with their pre-machining
+thermal maps, which customers do not possess.
+A competitor recently advertised 'predictive liquid cooling using workload telemetry' but has not disclosed its algorithm. No
+known competitor advertises per-package adaptive cold-plate geometry.
+
+6. Internal invention disclosure status
+No invention disclosure has been filed for the feed-forward controller, compressibility estimator, accumulator interaction, or
+per-unit geometry-generation method. Engineering has treated all four as implementation details. Sales presentations disclose
+that HelioForge achieves 'predictive cooling' and 'factory-calibrated cold plates' but do not disclose the mechanisms.
+
+Challenge prompt
+   Act as a board-level R&D; / Trade Secret Invention Strategy team. Using only this confidential
+   package, identify technical concepts that appear materially distinct from the existing patent claims;
+   separate potentially patentable inventions from know-how that may be more valuable as trade secrets;
+   identify combinations that may be more defensible than individual features; assess what is exposed
+   to reverse engineering or accidental disclosure; and propose the next diligence experiments and
+   documentation steps. Cite the evidence supporting every conclusion and explicitly flag where outside
+   prior-art or legal analysis is required.
+
+SYNTHETIC DEMONSTRATION - NO REAL COMPANY, PATIENT, OR CONFIDENTIAL DATA                                                    Page 2
+
+Act as a board-level R&D / Trade Secret Invention Strategy team.
+
+Using only this confidential package:
+
+1. Identify technical concepts that appear materially distinct from the
+   existing patent claims.
+
+2. Separate potentially patentable inventions from know-how that may be more
+   valuable as trade secrets.
+
+3. Identify combinations of technical concepts that may be more defensible
+   or valuable than the individual features.
+
+4. Assess what appears exposed to reverse engineering, disclosure, supplier
+   access, or loss of trade-secret protection.
+
+5. Identify potentially valuable inventions or combinations that management
+   may not realize it has created.
+
+6. Recommend the next diligence experiments, documentation, invention
+   disclosures, and protection decisions that should be considered by
+   management and the board.
+
+Cite specific evidence from the supplied document for every material
+conclusion.
+
+Explicitly identify where outside prior-art searching, patent counsel,
+trade-secret counsel, or other legal analysis would be required.
+
+Do not assume that something is patentable merely because it is not covered
+by the existing patents.<|close|>message<|sep|><|end_of_msg|><|open|>message role="assistant"<|sep|><|open|>think<|sep|>

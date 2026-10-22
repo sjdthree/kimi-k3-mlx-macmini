@@ -1,0 +1,119 @@
+{
+  "model": "Kimi-K3 (local, this repository)",
+  "machine": "Mac mini M4 Pro, 64 GiB unified memory; checkpoint on USB4 NVMe",
+  "max_completion_tokens": 20000,
+  "cases_completed": 3,
+  "results": [
+    {
+      "number": 1,
+      "name": "semiconductor_root_cause",
+      "source_document": "01_semiconductor_confidential_excursion.pdf",
+      "status": "done",
+      "finish": "end_of_message",
+      "prompt_tokens": 1278,
+      "completion_tokens": 7623,
+      "reasoning_tokens": 5763,
+      "answer_tokens": 1847,
+      "format_tokens": 13,
+      "decode_seconds_per_token_median": 34.25,
+      "decode_seconds_per_token_max": 73.4,
+      "generation_hours": 72.6,
+      "peak_mlx_gib": 24.27,
+      "peak_mlx_gib_decode": 12.63,
+      "started": "2026-10-04T02:40:09",
+      "finished": "2026-10-10T02:04:32",
+      "interruptions": [
+        {
+          "stopped": "2026-10-05T11:13:02",
+          "restarted": "2026-10-08T09:27:19",
+          "hours_down": 70.2
+        }
+      ],
+      "settings": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "seed": 0,
+        "thinking_effort": "max",
+        "max_tokens": 20000,
+        "resident_gb": 8.0,
+        "mode": "runtime"
+      },
+      "messages": "demos/private-document-analysis/local/inputs/semiconductor.json",
+      "messages_sha256": "a63d47ed21c4fd06f424d29ff88e5c71f9be6d43b846d0ad4780bc5bd3493784",
+      "model_config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+      "commits": [
+        "42df3b1"
+      ]
+    },
+    {
+      "number": 2,
+      "name": "medical_ai_adverse_event",
+      "source_document": "02_medical_ai_confidential_incident.pdf",
+      "status": "done",
+      "finish": "end_of_message",
+      "prompt_tokens": 1039,
+      "completion_tokens": 8225,
+      "reasoning_tokens": 5943,
+      "answer_tokens": 2269,
+      "format_tokens": 13,
+      "decode_seconds_per_token_median": 35.01,
+      "decode_seconds_per_token_max": 53.59,
+      "generation_hours": 79.9,
+      "peak_mlx_gib": 22.01,
+      "peak_mlx_gib_decode": 12.68,
+      "started": "2026-10-10T02:04:32",
+      "finished": "2026-10-13T10:24:17",
+      "interruptions": [],
+      "settings": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "seed": 0,
+        "thinking_effort": "max",
+        "max_tokens": 20000,
+        "resident_gb": 8.0,
+        "mode": "runtime"
+      },
+      "messages": "demos/private-document-analysis/local/inputs/medical_ai.json",
+      "messages_sha256": "c68263d4900d608ffd6d41e9d8d4f9fe9bb86e9719485fc16c3732b4d671e119",
+      "model_config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+      "commits": [
+        "42df3b1"
+      ]
+    },
+    {
+      "number": 3,
+      "name": "rd_tradesecret_invention_strategy",
+      "source_document": "03_rd_tradesecret_invention_strategy.pdf",
+      "status": "done",
+      "finish": "end_of_message",
+      "prompt_tokens": 1239,
+      "completion_tokens": 11651,
+      "reasoning_tokens": 8425,
+      "answer_tokens": 3213,
+      "format_tokens": 13,
+      "decode_seconds_per_token_median": 34.88,
+      "decode_seconds_per_token_max": 70.92,
+      "generation_hours": 112.5,
+      "peak_mlx_gib": 23.9,
+      "peak_mlx_gib_decode": 13.21,
+      "started": "2026-09-29T09:40:49",
+      "finished": "2026-10-04T02:40:08",
+      "interruptions": [],
+      "settings": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "seed": 0,
+        "thinking_effort": "max",
+        "max_tokens": 20000,
+        "resident_gb": 8.0,
+        "mode": "runtime"
+      },
+      "messages": "demos/private-document-analysis/local/inputs/rd_tradesecret.json",
+      "messages_sha256": "be7464d4721068583b71e38fe13deefe10852eaa34e7c6f1f07d3909f0ef01a7",
+      "model_config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+      "commits": [
+        "42df3b1"
+      ]
+    }
+  ]
+}

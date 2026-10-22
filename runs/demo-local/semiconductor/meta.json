@@ -1,0 +1,19 @@
+{
+  "messages": "demos/private-document-analysis/local/inputs/semiconductor.json",
+  "messages_sha256": "a63d47ed21c4fd06f424d29ff88e5c71f9be6d43b846d0ad4780bc5bd3493784",
+  "prompt_tokens": 1278,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "seed": 0,
+  "thinking_effort": "max",
+  "mode": "runtime",
+  "model_config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+  "max_tokens": 20000,
+  "resident_gb": 8.0,
+  "commit": "42df3b1",
+  "started": "2026-10-04T02:40:09",
+  "resumes": 1,
+  "commits": [
+    "42df3b1"
+  ]
+}
