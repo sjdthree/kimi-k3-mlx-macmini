@@ -81,6 +81,15 @@ def main() -> int:
         check("both channels are written",
               all((tmp / "resumed" / n).is_file() for n in ("reasoning.md", "answer.md")))
 
+        def resumes(out):
+            return json.loads((tmp / out / "meta.json").read_text())["resumes"]
+
+        before = resumes("resumed")
+        r = job("resumed", 30)
+        check("rerunning a finished job is not counted as a resume",
+              r.returncode == 0 and resumes("resumed") == before == 1,
+              f"exit {r.returncode}, resumes {before} -> {resumes('resumed')}")
+
         r = job("resumed", 40, seed=4)
         check("restart with a different seed is refused", r.returncode == 2,
               f"exit {r.returncode}")

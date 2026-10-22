@@ -161,21 +161,15 @@ class Job:
             "commit": git_commit(),
         }
         f_meta = self.out / "meta.json"
-        if f_meta.is_file():
-            old = json.loads(f_meta.read_text())
+        old = json.loads(f_meta.read_text()) if f_meta.is_file() else None
+        if old:
             diff = [k for k in PINNED if old.get(k) != meta[k]]
             if diff:
                 self.log(f"refusing to resume: {diff} differ from {f_meta}")
                 return 2
-            meta["started"] = old.get("started")
-            meta["resumes"] = old.get("resumes", 0) + 1
-            meta["commits"] = sorted(set(old.get("commits", [old.get("commit")]) + [meta["commit"]]))
-        else:
-            meta["started"] = datetime.now().isoformat(timespec="seconds")
-            meta["resumes"] = 0
-            meta["commits"] = [meta["commit"]]
-        f_meta.write_text(json.dumps(meta, indent=2))
 
+        # Check for a finished job before touching meta.json, so rerunning run.sh
+        # over completed cases does not count as a resume.
         recs = self.load_tokens()
         ids = [r["id"] for r in recs]
         end_ids = {tok.special_tokens[n] for n in (chat_format.END_OF_MSG_TOKEN, "[EOS]")}
@@ -186,6 +180,16 @@ class Job:
         if len(ids) >= a.max_tokens:
             self.log("already at --max-tokens")
             return 0
+
+        if old:
+            meta["started"] = old.get("started")
+            meta["resumes"] = old.get("resumes", 0) + 1
+            meta["commits"] = sorted(set(old.get("commits", [old.get("commit")]) + [meta["commit"]]))
+        else:
+            meta["started"] = datetime.now().isoformat(timespec="seconds")
+            meta["resumes"] = 0
+            meta["commits"] = [meta["commit"]]
+        f_meta.write_text(json.dumps(meta, indent=2))
 
         cfg = K3Config.load(model_dir / "config.json")
         wdtype = mx.bfloat16 if a.mode == "runtime" else mx.float32
