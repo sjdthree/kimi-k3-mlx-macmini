@@ -1,0 +1,102 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Social preview frames</title>
+<style>
+  :root { --bg:#0d1117; --fg:#f5f7fa; --dim:#9aa4b2; --faint:#5c6573; --rule:#2a313c;
+          --accent:#f5a623; --card:#151b24; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { width:1280px; height:640px; overflow:hidden; background:var(--bg); }
+  body { font-family:-apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+         color:var(--fg); -webkit-font-smoothing:antialiased; }
+  .frame { position:absolute; inset:0; padding:78px 80px 0 94px; display:none; }
+  .frame.on { display:block; }
+  .bar { position:absolute; left:0; top:0; bottom:0; width:14px; background:var(--accent); }
+  .mono { font-family:"SF Mono", Menlo, monospace; }
+  .foot { position:absolute; left:94px; right:80px; bottom:30px; border-top:1px solid var(--rule);
+          padding-top:20px; display:flex; justify-content:space-between; align-items:baseline;
+          font-size:24px; color:var(--dim); }
+  .foot .url { color:var(--accent); font-size:24px; }
+
+  /* summary */
+  h1 { font-size:60px; font-weight:800; letter-spacing:-1.5px; line-height:1.05; }
+  .sub { font-size:28px; color:var(--dim); margin-top:14px; }
+  .cards { display:flex; gap:24px; margin-top:44px; }
+  .card { flex:1; background:var(--card); border:1px solid var(--rule); border-radius:14px;
+          padding:24px 26px 22px; }
+  .label { font-size:16px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+           color:var(--dim); }
+  .wait { font-size:23px; color:#7a8494; margin-top:14px; text-decoration:line-through;
+          text-decoration-thickness:2px; }
+  .local { margin-top:6px; display:flex; align-items:baseline; gap:10px; }
+  .local b { font-size:58px; font-weight:800; color:var(--accent); letter-spacing:-1px; }
+  .local span { font-size:22px; color:var(--dim); }
+
+  /* per-case */
+  .kicker { font-size:22px; color:var(--accent); letter-spacing:1px; }
+  .quote { font-size:50px; font-weight:700; line-height:1.15; margin-top:26px; letter-spacing:-0.8px;
+           color:var(--dim); max-width:1080px; }
+  .quote em { font-style:normal; color:var(--fg); }
+  .mac { font-size:34px; color:var(--dim); margin-top:44px; }
+  .mac b { color:var(--accent); font-weight:800; }
+  .take { font-size:68px; font-weight:800; margin-top:6px; letter-spacing:-1.5px; }
+  .found { font-size:23px; color:var(--dim); margin-top:30px; max-width:1100px; }
+  .found b { color:var(--fg); font-weight:600; }
+</style></head>
+<body>
+<div class="bar"></div>
+
+<section class="frame" id="f0" style="padding-top:64px">
+  <h1>Private documents, a 2.8T model,<br>and a Mac mini</h1>
+  <p class="sub">The full Kimi-K3 runs locally. Nothing goes to the cloud.</p>
+  <div class="cards">
+    <div class="card"><div class="label">Medical records</div>
+      <div class="wait">Specialist: 3 months</div>
+      <div class="local"><b>3.3</b><span>days on the Mac</span></div></div>
+    <div class="card"><div class="label">Customer data</div>
+      <div class="wait">Attorneys: 1–2 weeks</div>
+      <div class="local"><b>3.0</b><span>days on the Mac</span></div></div>
+    <div class="card"><div class="label">Trade secrets &amp; patents</div>
+      <div class="wait">Attorneys: a month</div>
+      <div class="local"><b>4.7</b><span>days on the Mac</span></div></div>
+  </div>
+  <div class="foot"><span>~32 s/token · 64 GB M4 Pro · all 93 layers</span>
+    <span class="url mono">github.com/sjdthree/kimi-k3-mlx-macmini</span></div>
+</section>
+
+<section class="frame" id="f1">
+  <div class="kicker mono">1/3 · MEDICAL RECORDS</div>
+  <p class="quote">“See a specialist? <em>Best I can do is three&nbsp;months.</em>”</p>
+  <p class="mac">Kimi-K3 on my Mac mini: <b>3.3 days.</b></p>
+  <p class="take">I’ll take the 3 days.</p>
+  <p class="found">Synthetic adverse-event case: found the planted cause, <b>a stale clinical-policy
+    config, not a model bug.</b></p>
+  <div class="foot"><span>Patient data never leaves the machine</span>
+    <span class="url mono">github.com/sjdthree/kimi-k3-mlx-macmini</span></div>
+</section>
+
+<section class="frame" id="f2">
+  <div class="kicker mono">2/3 · CONFIDENTIAL CUSTOMER DATA</div>
+  <p class="quote">“Your attorneys <em>can get back to you in a week or&nbsp;two.</em>”</p>
+  <p class="mac">Kimi-K3 on my Mac mini: <b>3.0 days.</b></p>
+  <p class="take">I’ll take the 3 days.</p>
+  <p class="found">Synthetic fab excursion: traced the planted chain, <b>a mis-seated gas-ring seal
+    → edge defects.</b></p>
+  <div class="foot"><span>Process data never leaves the machine</span>
+    <span class="url mono">github.com/sjdthree/kimi-k3-mlx-macmini</span></div>
+</section>
+
+<section class="frame" id="f3">
+  <div class="kicker mono">3/3 · TRADE SECRETS &amp; PATENTS</div>
+  <p class="quote">“Patent or trade secret? <em>The attorneys need a&nbsp;month.</em>”</p>
+  <p class="mac">Kimi-K3 on my Mac mini: <b>4.7 days.</b></p>
+  <p class="take">I’ll take the 5 days.</p>
+  <p class="found">Synthetic R&amp;D package: found <b>all four planted concepts</b> the existing
+    patents don’t cover.</p>
+  <div class="foot"><span>Unfiled inventions never leave the machine</span>
+    <span class="url mono">github.com/sjdthree/kimi-k3-mlx-macmini</span></div>
+</section>
+
+<script>
+  const n = (location.hash || "#0").slice(1);
+  document.getElementById("f" + n).classList.add("on");
+</script>
+</body></html>
