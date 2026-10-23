@@ -74,7 +74,11 @@ These are decisions, not tests. [licensing.md](licensing.md) has the details.
       metadata: on 2026-09-23 the owner had history rewritten so that every commit's
       author and committer is the GitHub noreply address; a university address and a
       machine hostname were removed. Commit IDs changed; IDs cited in `runs/` raw logs
-      are the pre-rewrite ones.
+      are the pre-rewrite ones. 2026-10-23: two later commits had picked up the machine
+      hostname again (no `user.email` was configured) and were rewritten; the `v0.1.0`
+      tag and release, which still pointed at pre-rewrite history, were deleted, to be
+      recreated on the cleaned `main` in gate 5. Check `git log --all --format='%ae %ce'`
+      shows only the noreply address before going public.
 - [x] The evaluator answer key for the private-document demo is not in the tree or in
       any reachable commit: `git log --all --name-only --format= | grep -i -e do_not_publish -e ground_truth -e handoff`
       prints nothing, and `demos/private-document-analysis/SHA256SUMS` still verifies
