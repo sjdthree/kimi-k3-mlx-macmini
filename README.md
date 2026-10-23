@@ -2,6 +2,8 @@
 
 [![tests](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml/badge.svg)](https://github.com/sjdthree/kimi-k3-mlx-macmini/actions/workflows/tests.yml)
 
+[![Three private-document cases run locally on the Mac mini: medical records in 3.3 days, customer data in 3.0 days, trade secrets and patents in 4.7 days](docs/social-preview.gif)](demos/private-document-analysis/README.md)
+
 > *"RAM is expensive! But my SSD can hold a 1.5 TB model — can't I run it off that?"*
 >
 > **Yes!**
